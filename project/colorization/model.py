@@ -1,81 +1,100 @@
+import numpy as np
 import tensorflow as tf
 from keras import Model
-from keras.models import Sequential
 from keras.preprocessing.image import ImageDataGenerator
-from skimage.color import rgb2lab, gray2rgb
-import numpy as np
 from keras.layers import Input, Conv2D, UpSampling2D
+from skimage.color import rgb2lab
 
-vgg_model = tf.keras.applications.vgg19.VGG19()
+gpus = tf.config.list_physical_devices('GPU')
+if gpus:
+    try:
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
 
-vgg19_encoder = Sequential()
+    except RuntimeError as e:
+        print(e)
 
-for i, layer in enumerate(vgg_model.layers):
-    if i < 22:
-        vgg19_encoder.add(layer)
+vgg19_model = tf.keras.applications.vgg19.VGG19(include_top=False,
+                                                weights='imagenet',
+                                                input_shape=(224, 224, 3))
 
-for layer in vgg19_encoder.layers:
+for layer in vgg19_model.layers:
     layer.trainable = False
 
-path = '../../datasets/places365/train/'
+# Define the input tensor for grayscale images
+inputs = Input(shape=(224, 224, 1))
+
+# Convert the grayscale image to a 3-channel image
+encoder = Conv2D(3, (1, 1), activation='relu')(inputs)
+
+# Pass the 3-channel image through the pre-trained VGG19 model
+encoder = vgg19_model(encoder)
+
+# Add decoder layers to generate the colorized image
+decoder = Conv2D(256, (3, 3), activation='relu', strides=1, padding='same')(encoder)
+decoder = UpSampling2D((2, 2))(decoder)
+decoder = Conv2D(128, (3, 3), activation='relu', strides=1, padding='same')(decoder)
+decoder = UpSampling2D((2, 2))(decoder)
+decoder = Conv2D(64, (3, 3), activation='relu', strides=1, padding='same')(decoder)
+decoder = UpSampling2D((2, 2))(decoder)
+decoder = Conv2D(32, (3, 3), activation='relu', strides=1, padding='same')(decoder)
+decoder = UpSampling2D((2, 2))(decoder)
+decoder = Conv2D(2, (3, 3), activation='tanh', strides=1, padding='same')(decoder)
+outputs = UpSampling2D((2, 2))(decoder)
+
+model = Model(inputs=inputs, outputs=outputs)
+model.summary()
+
+batch_size = 16
+
+train_dir = '../../datasets/places365/train/'
 train_datagen = ImageDataGenerator(rescale=1. / 255)
-train = train_datagen.flow_from_directory(path,
-                                          target_size=(224, 224),
-                                          batch_size=1,
-                                          classes=['house'],
-                                          class_mode=None)
+train_generator = train_datagen.flow_from_directory(
+    train_dir,
+    target_size=(224, 224),
+    batch_size=batch_size,
+    color_mode='rgb',
+    classes=['house', 'cottage', 'beach_house', 'mosque-outdoor'],
+    class_mode=None)
 
-X = []
-Y = []
-for i, img in enumerate(train):
-    if i < 1024:
-        lab = rgb2lab(img)
-        lum = lab[..., 0]
-        X.append(lum)
-        ab = lab[..., 1:]
-        Y.append(ab / 128)
-    else:
-        break
+num_images = train_generator.n
 
-X = np.array(X)
-Y = np.array(Y)
-X = X.reshape(X.shape + (1,))
-Y = Y.reshape((Y.shape[0], 224, 224, 2))
 
-vgg_features = []
-for i, sample in enumerate(X):
-    sample = gray2rgb(sample)
-    sample = sample.reshape((1, 224, 224, 3))
-    prediction = vgg19_encoder.predict(sample, verbose=0)
-    prediction = prediction.reshape((7, 7, 512))
-    vgg_features.append(prediction)
+# Define a function to get the L and AB channels from an RGB image
+def get_lab(image):
+    # Convert the image to LAB color space
+    lab = rgb2lab(image)
+    # Get the L channel
+    lum = lab[..., 0]
+    # Get the AB channels and normalize them to the range [-1, 1]
+    ab = lab[..., 1:] / 128.
+    # Return the L and AB channels as a tuple
+    return lum, ab
 
-vgg_features = np.array(vgg_features)
 
-vgg19_encoder.compile()
-vgg19_encoder.save('models/vgg19_encoder.h5')
+def generator(gen):
+    for batch in gen:
+        x = []
+        y = []
 
-# Train the network
+        for i in range(len(batch)):
+            # Get the L and AB channels for the image
+            l, ab = get_lab(batch[i])
+            # Append the L and AB channels to the x and Y lists
+            x.append(l)
+            y.append(ab)
 
-# Encoder
-encoder_input = Input(shape=(7, 7, 512,))
+        # Convert the x and Y lists to numpy arrays
+        x = np.array(x)
+        y = np.array(y)
+        # Yield the x and Y arrays
+        yield x, y
 
-# Decoder
-decoder_output = Conv2D(256, (3, 3), activation='relu', padding='same')(encoder_input)
-decoder_output = UpSampling2D((2, 2))(decoder_output)
-decoder_output = Conv2D(128, (3, 3), activation='relu', padding='same')(decoder_output)
-decoder_output = UpSampling2D((2, 2))(decoder_output)
-decoder_output = Conv2D(64, (3, 3), activation='relu', padding='same')(decoder_output)
-decoder_output = UpSampling2D((2, 2))(decoder_output)
-decoder_output = Conv2D(32, (3, 3), activation='relu', padding='same')(decoder_output)
-decoder_output = UpSampling2D((2, 2))(decoder_output)
-decoder_output = Conv2D(2, (3, 3), activation='tanh', padding='same')(decoder_output)
-decoder_output = UpSampling2D((2, 2))(decoder_output)
 
-decoder = Model(inputs=encoder_input, outputs=decoder_output)
-decoder.summary()
+# Train the model
+model.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
+history = model.fit(generator(train_generator), batch_size=batch_size, epochs=10,
+                    steps_per_epoch=num_images / batch_size)
 
-decoder.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
-decoder.fit(vgg_features, Y, epochs=100, batch_size=32)
-
-decoder.save('models/decoder.h5')
+# Save the model
+model.save('models/colorization_model_places365.h5')
