@@ -3,11 +3,11 @@ from skimage.transform import resize
 
 
 def load_image(image_path, output_shape=(224, 224), anti_aliasing=False):
-    image = img_to_array(load_img(image_path))
-    input_shape = (image.shape[0], image.shape[1])
+    original_image = img_to_array(load_img(image_path))
+    input_shape = (original_image.shape[0], original_image.shape[1])
 
-    image = resize_image(image, output_shape, anti_aliasing)
-    return image, input_shape
+    resized_image = resize_image(original_image, output_shape, anti_aliasing)
+    return original_image, resized_image, input_shape
 
 
 def resize_image(image, size, anti_aliasing=False):
@@ -16,4 +16,8 @@ def resize_image(image, size, anti_aliasing=False):
 
 
 def normalize_image(image, value):
+    image /= value
+
+
+def denormalize_image(image, value):
     image *= value

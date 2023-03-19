@@ -1,36 +1,44 @@
+import os
 import numpy as np
 import tensorflow as tf
-from skimage.color import rgb2lab, gray2rgb, lab2rgb
 from skimage.io import imsave
+from skimage.color import lab2rgb, rgb2lab
+from utils import load_image, resize_image, normalize_image, denormalize_image
 
-from utils import load_image, normalize_image, resize_image
 
-tf.config.threading.set_inter_op_parallelism_threads(num_threads=8)
-print(tf.config.threading.get_intra_op_parallelism_threads())
+def predict_image(model, input_path, result_path):
+    original_image, resized_image, input_shape = load_image(input_path, (224, 224), anti_aliasing=True)
+    normalize_image(original_image, 255)
+    normalize_image(resized_image, 255)
 
-vgg19_encoder = tf.keras.models.load_model("models/vgg19_encoder.h5")
-decoder = tf.keras.models.load_model("models/decoder.h5")
+    lab = rgb2lab(resized_image)
+    lum = lab[:, :, 0]
+    grayscale_image = np.reshape(lum, (1, 224, 224, 1))
 
-image_path = "images/image.jpg"
+    ab = model.predict(grayscale_image, verbose=0)
+    denormalize_image(ab, 128)
+    result = np.zeros((224, 224, 3))
+    result[:, :, 1:] = ab
 
-loaded_image, input_shape = load_image(image_path, (224, 224), anti_aliasing=True)
-normalize_image(loaded_image, 1. / 255)
+    result = resize_image(result, (input_shape[0], input_shape[1]), anti_aliasing=True)
+    result[:, :, 0] = rgb2lab(original_image)[:, :, 0]
+    result = lab2rgb(result)
+    denormalize_image(result, 255)
 
-lab = rgb2lab(loaded_image)
-lum = lab[:, :, 0]
-grayscale_image = gray2rgb(lum)
-grayscale_image = grayscale_image.reshape((1, 224, 224, 3))
+    imsave(result_path, result.astype('uint8'))
 
-encoder_prediction = vgg19_encoder.predict(grayscale_image, verbose=0)
-ab = decoder.predict(encoder_prediction, verbose=0)
-ab *= 128
-result = np.zeros((224, 224, 3))
-result[:, :, 0] = lum
-result[:, :, 1:] = ab
 
-result = resize_image(result, (input_shape[0], input_shape[1]), anti_aliasing=True)
+def main():
+    inputs_path = "images/inputs/"
+    results_path = "images/results/"
+    model_path = "models/colorization_model_places365.h5"
 
-result = lab2rgb(result)
-normalize_image(result, 255)
+    model = tf.keras.models.load_model(model_path)
+    for filename in os.listdir(inputs_path):
+        input_path = inputs_path + '/' + filename
+        result_path = results_path + '/result_' + filename
+        predict_image(model, input_path, result_path)
 
-imsave("images/result.jpg", result.astype('uint8'))
+
+if __name__ == "__main__":
+    main()
