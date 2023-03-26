@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from skimage.io import imsave
 from skimage.color import lab2rgb, rgb2lab
-from utils import load_image, resize_image, normalize_image, denormalize_image
+from utils import check_gpu_available, load_image, resize_image, normalize_image, denormalize_image
 
 
 def predict_image(model, input_path, result_path):
@@ -28,17 +28,19 @@ def predict_image(model, input_path, result_path):
     imsave(result_path, result.astype('uint8'))
 
 
-def main():
-    inputs_path = "images/inputs/"
-    results_path = "images/results/"
-    model_path = "models/colorization_model_places365.h5"
+INPUTS_PATH = "images/inputs/"
+RESULTS_PATH = "images/results/"
+MODEL_PATH = "models/"
 
-    model = tf.keras.models.load_model(model_path)
-    for filename in os.listdir(inputs_path):
-        input_path = inputs_path + '/' + filename
-        result_path = results_path + '/result_' + filename
+
+def predict_dir_images(model_name):
+    model = tf.keras.models.load_model(MODEL_PATH + model_name)
+    for filename in os.listdir(INPUTS_PATH):
+        input_path = INPUTS_PATH + '/' + filename
+        result_path = RESULTS_PATH + '/result_' + filename
         predict_image(model, input_path, result_path)
 
 
 if __name__ == "__main__":
-    main()
+    check_gpu_available()
+    predict_dir_images(model_name='colorization_model_places365.h5')

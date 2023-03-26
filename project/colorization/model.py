@@ -1,18 +1,10 @@
-import numpy as np
 import tensorflow as tf
 from keras import Model
 from keras.preprocessing.image import ImageDataGenerator
 from keras.layers import Input, Conv2D, UpSampling2D
-from skimage.color import rgb2lab
+from utils import check_gpu_available, generator
 
-gpus = tf.config.list_physical_devices('GPU')
-if gpus:
-    try:
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
-
-    except RuntimeError as e:
-        print(e)
+check_gpu_available()
 
 vgg19_model = tf.keras.applications.vgg19.VGG19(include_top=False,
                                                 weights='imagenet',
@@ -45,56 +37,73 @@ outputs = UpSampling2D((2, 2))(decoder)
 model = Model(inputs=inputs, outputs=outputs)
 model.summary()
 
-batch_size = 16
+DATASET_NAME = 'flowers/'
+BATCH_SIZE = 16
 
-train_dir = '../../datasets/places365/train/'
+train_dir = '../../datasets/' + DATASET_NAME
 train_datagen = ImageDataGenerator(rescale=1. / 255)
 train_generator = train_datagen.flow_from_directory(
     train_dir,
     target_size=(224, 224),
-    batch_size=batch_size,
+    batch_size=BATCH_SIZE,
     color_mode='rgb',
-    classes=['house', 'cottage', 'beach_house', 'mosque-outdoor'],
+    classes=['train'],
     class_mode=None)
 
-num_images = train_generator.n
+val_dir = '../../datasets/' + DATASET_NAME
+val_datagen = ImageDataGenerator(rescale=1. / 255)
+val_generator = val_datagen.flow_from_directory(
+    val_dir,
+    target_size=(224, 224),
+    batch_size=BATCH_SIZE,
+    color_mode='rgb',
+    classes=['val'],
+    class_mode=None)
 
+NUM_IMAGES = train_generator.n
 
-# Define a function to get the L and AB channels from an RGB image
-def get_lab(image):
-    # Convert the image to LAB color space
-    lab = rgb2lab(image)
-    # Get the L channel
-    lum = lab[..., 0]
-    # Get the AB channels and normalize them to the range [-1, 1]
-    ab = lab[..., 1:] / 128.
-    # Return the L and AB channels as a tuple
-    return lum, ab
+# Callback to save the model after every epoch
+from keras.callbacks import ModelCheckpoint
 
-
-def generator(gen):
-    for batch in gen:
-        x = []
-        y = []
-
-        for i in range(len(batch)):
-            # Get the L and AB channels for the image
-            l, ab = get_lab(batch[i])
-            # Append the L and AB channels to the x and Y lists
-            x.append(l)
-            y.append(ab)
-
-        # Convert the x and Y lists to numpy arrays
-        x = np.array(x)
-        y = np.array(y)
-        # Yield the x and Y arrays
-        yield x, y
-
+checkpoint = ModelCheckpoint('models/colorization_model_' + DATASET_NAME + '_checkpoint.h5',
+                             monitor='loss',
+                             verbose=0,
+                             save_best_only=True,
+                             mode='auto')
 
 # Train the model
 model.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
-history = model.fit(generator(train_generator), batch_size=batch_size, epochs=10,
-                    steps_per_epoch=num_images / batch_size)
+stats = model.fit(generator(train_generator),
+                  batch_size=BATCH_SIZE, epochs=1,
+                  steps_per_epoch=NUM_IMAGES / BATCH_SIZE,
+                  validation_data=generator(val_generator),
+                  validation_batch_size=BATCH_SIZE,
+                  validation_steps=NUM_IMAGES / BATCH_SIZE,
+                  callbacks=[checkpoint])
 
 # Save the model
-model.save('models/colorization_model_places365.h5')
+model.save('models/colorization_model_' + DATASET_NAME + '.h5')
+
+# Plot the model statistics
+from matplotlib import pyplot as plt
+
+acc = stats.history['acc']
+val_acc = stats.history['val_acc']
+loss = stats.history['loss']
+val_loss = stats.history['val_loss']
+
+epochs = range(1, len(acc) + 1)
+
+plt.plot(epochs, acc, 'r', label='Training acc')
+plt.plot(epochs, val_acc, 'b', label='Validation acc')
+plt.title('Training and validation accuracy')
+plt.legend()
+
+plt.figure()
+
+plt.plot(epochs, loss, 'r', label='Training loss')
+plt.plot(epochs, val_loss, 'b', label='Validation loss')
+plt.title('Training and validation loss')
+plt.legend()
+
+plt.show()
