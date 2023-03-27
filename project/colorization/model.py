@@ -37,7 +37,7 @@ outputs = UpSampling2D((2, 2))(decoder)
 model = Model(inputs=inputs, outputs=outputs)
 model.summary()
 
-DATASET_NAME = 'flowers/'
+DATASET_NAME = 'flowers'
 BATCH_SIZE = 16
 
 train_dir = '../../datasets/' + DATASET_NAME
@@ -74,7 +74,7 @@ checkpoint = ModelCheckpoint('models/colorization_model_' + DATASET_NAME + '_che
 # Train the model
 model.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
 stats = model.fit(generator(train_generator),
-                  batch_size=BATCH_SIZE, epochs=1,
+                  batch_size=BATCH_SIZE, epochs=10,
                   steps_per_epoch=NUM_IMAGES / BATCH_SIZE,
                   validation_data=generator(val_generator),
                   validation_batch_size=BATCH_SIZE,
@@ -87,8 +87,8 @@ model.save('models/colorization_model_' + DATASET_NAME + '.h5')
 # Plot the model statistics
 from matplotlib import pyplot as plt
 
-acc = stats.history['acc']
-val_acc = stats.history['val_acc']
+acc = stats.history['accuracy']
+val_acc = stats.history['val_accuracy']
 loss = stats.history['loss']
 val_loss = stats.history['val_loss']
 

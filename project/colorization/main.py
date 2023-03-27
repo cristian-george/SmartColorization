@@ -36,11 +36,21 @@ MODEL_PATH = "models/"
 def predict_dir_images(model_name):
     model = tf.keras.models.load_model(MODEL_PATH + model_name)
     for filename in os.listdir(INPUTS_PATH):
-        input_path = INPUTS_PATH + '/' + filename
-        result_path = RESULTS_PATH + '/result_' + filename
+        input_path = INPUTS_PATH + filename
+        result_path = RESULTS_PATH + 'result_' + filename
         predict_image(model, input_path, result_path)
 
 
-if __name__ == "__main__":
+def main():
     check_gpu_available()
-    predict_dir_images(model_name='colorization_model_places365.h5')
+    # predict_dir_images(model_name='colorization_model_flowers.h5')
+    model = tf.keras.models.load_model(MODEL_PATH + 'colorization_model_flowers.h5')
+
+    filename = 'flower03.jpg'
+    input_path = INPUTS_PATH + filename
+    result_path = RESULTS_PATH + 'result_' + filename
+    predict_image(model, input_path, result_path)
+
+
+if __name__ == "__main__":
+    main()

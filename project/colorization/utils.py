@@ -63,9 +63,9 @@ def check_gpu_available():
     if gpus:
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
-            print("Using gpu: " + gpu)
+            print("Using gpu: {}".format(gpu))
     else:
         num_threads = os.cpu_count()
         tf.config.threading.set_inter_op_parallelism_threads(num_threads=num_threads)
         tf.config.threading.set_intra_op_parallelism_threads(num_threads=num_threads)
-        print("Using cpu: " + str(num_threads) + " threads")
+        print("Using cpu: {} threads".format(num_threads))
