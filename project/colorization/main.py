@@ -44,9 +44,10 @@ def predict_dir_images(model_name):
 def main():
     check_gpu_available()
     # predict_dir_images(model_name='colorization_model_flowers.h5')
-    model = tf.keras.models.load_model(MODEL_PATH + 'colorization_model_flowers.h5')
+    model = tf.keras.models.load_model(MODEL_PATH + 'colorization_model_flowers_checkpoint.h5')
+    model.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
 
-    filename = 'flower03.jpg'
+    filename = 'flower01.jpg'
     input_path = INPUTS_PATH + filename
     result_path = RESULTS_PATH + 'result_' + filename
     predict_image(model, input_path, result_path)

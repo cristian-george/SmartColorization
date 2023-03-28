@@ -1,5 +1,4 @@
 import os
-import numpy as np
 from keras_preprocessing.image import load_img, img_to_array
 from skimage.color import rgb2lab
 from skimage.transform import resize
@@ -32,30 +31,11 @@ def get_lab(image):
     # Convert the image to LAB color space
     lab = rgb2lab(image)
     # Get the L channel
-    lum = lab[..., 0]
+    lum = lab[:, :, 0]
     # Get the AB channels and normalize them to the range [-1, 1]
-    ab = lab[..., 1:] / 128.
+    ab = lab[:, :, 1:] / 128.
     # Return the L and AB channels as a tuple
     return lum, ab
-
-
-def generator(gen):
-    for batch in gen:
-        x = []
-        y = []
-
-        for i in range(len(batch)):
-            # Get the L and AB channels for the image
-            l, ab = get_lab(batch[i])
-            # Append the L and AB channels to the x and Y lists
-            x.append(l)
-            y.append(ab)
-
-        # Convert the x and Y lists to numpy arrays
-        x = np.array(x)
-        y = np.array(y)
-        # Yield the x and Y arrays
-        yield x, y
 
 
 def check_gpu_available():
