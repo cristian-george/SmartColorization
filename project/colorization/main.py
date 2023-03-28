@@ -2,8 +2,12 @@ import os
 import numpy as np
 import tensorflow as tf
 from skimage.io import imsave
-from skimage.color import lab2rgb, rgb2lab
+from skimage.color import lab2rgb, rgb2lab, gray2rgb
 from utils import check_gpu_available, load_image, resize_image, normalize_image, denormalize_image
+
+check_gpu_available()
+
+vgg19_model = tf.keras.models.load_model('models/vgg19.h5')
 
 
 def predict_image(model, input_path, result_path):
@@ -13,9 +17,14 @@ def predict_image(model, input_path, result_path):
 
     lab = rgb2lab(resized_image)
     lum = lab[:, :, 0]
-    grayscale_image = np.reshape(lum, (1, 224, 224, 1))
+    gray_img = gray2rgb(lum)
+    gray_img = gray_img.reshape((1, 224, 224, 3))
 
-    ab = model.predict(grayscale_image, verbose=0)
+    prediction = vgg19_model.predict(gray_img, verbose=0)
+    prediction = prediction.reshape((1, 7, 7, 512))
+
+    ab = model.predict(prediction, verbose=0)
+
     denormalize_image(ab, 128)
     result = np.zeros((224, 224, 3))
     result[:, :, 1:] = ab
@@ -42,12 +51,11 @@ def predict_dir_images(model_name):
 
 
 def main():
-    check_gpu_available()
     # predict_dir_images(model_name='colorization_model_flowers.h5')
-    model = tf.keras.models.load_model(MODEL_PATH + 'colorization_model_flowers_checkpoint.h5')
+    model = tf.keras.models.load_model(MODEL_PATH + 'colorization_model_dandelion.h5')
     model.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
 
-    filename = 'flower01.jpg'
+    filename = 'flower04.jpg'
     input_path = INPUTS_PATH + filename
     result_path = RESULTS_PATH + 'result_' + filename
     predict_image(model, input_path, result_path)
