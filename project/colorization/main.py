@@ -51,14 +51,14 @@ def predict_dir_images(model_name):
 
 
 def main():
-    # predict_dir_images(model_name='colorization_model_flowers.h5')
-    model = tf.keras.models.load_model(MODEL_PATH + 'colorization_model_dandelion_checkpoint.h5', compile=False)
-    model.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
-
-    filename = 'flower01.jpg'
-    input_path = INPUTS_PATH + filename
-    result_path = RESULTS_PATH + 'result_' + filename
-    predict_image(model, input_path, result_path)
+    predict_dir_images(model_name='colorization_model_flowers_checkpoint1.h5')
+    # model = tf.keras.models.load_model(MODEL_PATH + 'colorization_model_flowers_checkpoint1.h5')
+    # # model.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
+    #
+    # filename = 'flower05.jpg'
+    # input_path = INPUTS_PATH + filename
+    # result_path = RESULTS_PATH + 'result_' + filename
+    # predict_image(model, input_path, result_path)
 
 
 if __name__ == "__main__":

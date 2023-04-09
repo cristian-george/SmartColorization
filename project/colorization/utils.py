@@ -1,5 +1,6 @@
 import os
-from keras_preprocessing.image import load_img, img_to_array
+
+from keras.utils import load_img, img_to_array
 from skimage.color import rgb2lab
 from skimage.transform import resize
 import tensorflow as tf

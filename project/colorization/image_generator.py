@@ -1,5 +1,5 @@
 import numpy as np
-from keras_preprocessing.image import ImageDataGenerator
+from keras.preprocessing.image import ImageDataGenerator
 from skimage.color import gray2rgb
 
 from utils import get_lab
