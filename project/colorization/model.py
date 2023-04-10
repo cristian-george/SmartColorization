@@ -1,95 +1,133 @@
-import math
-import tensorflow as tf
+import json
+import os
+
 from keras import Model
-from keras.layers import Input, Conv2D, UpSampling2D, BatchNormalization
+from keras.applications import VGG19
+from keras.callbacks import ModelCheckpoint
+from keras.layers import Conv2D, BatchNormalization, UpSampling2D
+from keras.optimizers import Adam
 from matplotlib import pyplot as plt
 
-from image_generator import ImageGenerator
 from utils import check_gpu_available
 
-check_gpu_available()
 
-# Encoder
-vgg19_model = tf.keras.applications.vgg19.VGG19(include_top=False,
-                                                weights='imagenet',
-                                                input_shape=(224, 224, 3))
-vgg19_model.summary()
-for layer in vgg19_model.layers:
-    layer.trainable = False
+class ColorizationModel:
+    def __init__(self):
+        self.autoencoder = None
+        self.history = None
 
-decoder_input = Input(shape=(7, 7, 512))
+        check_gpu_available()
 
-# Add decoder layers to generate the colorized image
-decoder = Conv2D(256, (3, 3), activation='relu', padding='same')(decoder_input)
-decoder = BatchNormalization()(decoder)
-decoder = UpSampling2D((2, 2))(decoder)
-decoder = Conv2D(128, (3, 3), activation='relu', padding='same')(decoder)
-decoder = BatchNormalization()(decoder)
-decoder = UpSampling2D((2, 2))(decoder)
-decoder = Conv2D(64, (3, 3), activation='relu', padding='same')(decoder)
-decoder = BatchNormalization()(decoder)
-decoder = UpSampling2D((2, 2))(decoder)
-decoder = Conv2D(32, (3, 3), activation='relu', padding='same')(decoder)
-decoder = BatchNormalization()(decoder)
-decoder = UpSampling2D((2, 2))(decoder)
-decoder = Conv2D(16, (3, 3), activation='relu', padding='same')(decoder)
-decoder = Conv2D(2, (3, 3), activation='tanh', padding='same')(decoder)
-decoder_output = UpSampling2D((2, 2))(decoder)
+    def __build_encoder(self):
+        vgg19 = VGG19(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
 
-model = Model(inputs=decoder_input, outputs=decoder_output)
-model.summary()
+        # Set the encoder layers to non-trainable
+        for layer in vgg19.layers:
+            layer.trainable = False
 
-DATASET_NAME = 'flowers'
-BATCH_SIZE = 16
+        self.encoder = Model(name='encoder',
+                             inputs=vgg19.input,
+                             outputs=vgg19.output)
 
-train_dir = '../../datasets/' + DATASET_NAME
-val_dir = '../../datasets/' + DATASET_NAME
+    def __build_decoder(self):
+        decoder_input = self.encoder.output  # Input(shape=(7, 7, 512))
+        decoder = Conv2D(256, (3, 3), activation='relu', padding='same')(decoder_input)
+        decoder = BatchNormalization()(decoder)
+        decoder = UpSampling2D((2, 2))(decoder)
+        decoder = Conv2D(128, (3, 3), activation='relu', padding='same')(decoder)
+        decoder = BatchNormalization()(decoder)
+        decoder = UpSampling2D((2, 2))(decoder)
+        decoder = Conv2D(64, (3, 3), activation='relu', padding='same')(decoder)
+        decoder = BatchNormalization()(decoder)
+        decoder = UpSampling2D((2, 2))(decoder)
+        decoder = Conv2D(32, (3, 3), activation='relu', padding='same')(decoder)
+        decoder = BatchNormalization()(decoder)
+        decoder = UpSampling2D((2, 2))(decoder)
+        decoder = Conv2D(16, (3, 3), activation='relu', padding='same')(decoder)
+        decoder = Conv2D(2, (3, 3), activation='tanh', padding='same')(decoder)
+        decoder_output = UpSampling2D((2, 2))(decoder)
 
-train_ = ImageGenerator(train_dir, vgg19_model, batch_size=BATCH_SIZE, classes=['train'])
-val_ = ImageGenerator(val_dir, vgg19_model, batch_size=BATCH_SIZE, classes=['val'])
+        self.decoder = Model(name='decoder',
+                             inputs=decoder_input,
+                             outputs=decoder_output)
 
-# Callback to save the model after every epoch
-from keras.callbacks import ModelCheckpoint
+    def build(self):
+        self.__build_encoder()
+        self.__build_decoder()
 
-checkpoint = ModelCheckpoint('models/colorization_model_' + DATASET_NAME + '_checkpoint1.h5',
-                             monitor='loss',
-                             verbose=0,
-                             save_best_only=True,
-                             mode='auto',
-                             save_freq='epoch')
+        autoencoder_input = self.encoder.input  # Input(shape=(224, 224, 3))
+        autoencoder_output = self.decoder(self.encoder(autoencoder_input))
 
-# Train the model
-model.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
-stats = model.fit(train_.generator(),
-                  batch_size=BATCH_SIZE,
-                  steps_per_epoch=math.ceil(train_.n / train_.batch_size),
-                  validation_data=val_.generator(),
-                  validation_batch_size=val_.batch_size,
-                  validation_steps=math.ceil(val_.n / val_.batch_size),
-                  epochs=100,
-                  callbacks=[checkpoint])
+        self.autoencoder = Model(name='autoencoder',
+                                 inputs=autoencoder_input,
+                                 outputs=autoencoder_output)
 
-# Save the model
-model.save('models/colorization_model_' + DATASET_NAME + '.h5')
+    def compile(self, learning_rate=1e-4):
+        self.autoencoder.compile(optimizer=Adam(learning_rate=learning_rate),
+                                 loss='mse',
+                                 metrics=['accuracy'])
 
-# Plot the model statistics
-acc = stats.history['accuracy']
-val_acc = stats.history['val_accuracy']
-loss = stats.history['loss']
-val_loss = stats.history['val_loss']
+    def train(self, train_generator, val_generator, epochs, steps_per_epoch, val_steps,
+              checkpoints_directory='model_checkpoints'):
+        if not os.path.exists(checkpoints_directory):
+            os.makedirs(checkpoints_directory)
 
-epochs = range(1, len(acc) + 1)
+        model_checkpoint = ModelCheckpoint(
+            filepath=os.path.join(checkpoints_directory, 'colorization_model_epoch_{epoch:02d}.h5'),
+            save_freq=5 * steps_per_epoch,
+            save_best_only=False,
+            save_weights_only=True)
 
-plt.plot(epochs, acc, 'r', label='Training acc')
-plt.plot(epochs, val_acc, 'b', label='Validation acc')
-plt.title('Training and validation accuracy')
-plt.legend()
+        self.history = self.autoencoder.fit(train_generator,
+                                            validation_data=val_generator,
+                                            epochs=epochs,
+                                            steps_per_epoch=steps_per_epoch,
+                                            validation_steps=val_steps,
+                                            callbacks=[model_checkpoint])
 
-plt.figure()
+    def predict(self, image):
+        return self.autoencoder.predict(image)
 
-plt.plot(epochs, loss, 'r', label='Training loss')
-plt.plot(epochs, val_loss, 'b', label='Validation loss')
-plt.title('Training and validation loss')
-plt.legend()
+    def summary(self, expand_nested=True, show_trainable=True):
+        self.autoencoder.summary(expand_nested=expand_nested,
+                                 show_trainable=show_trainable)
 
-plt.show()
+    def save_model(self, model_path):
+        self.autoencoder.save(model_path)
+
+    def save_history(self, output_directory):
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+
+        history = {}
+        for key in self.history.history:
+            history[key] = self.history.history[key]
+
+        with open(os.path.join(output_directory, 'history.json'), 'w') as f:
+            json.dump(history, f)
+
+    def plot_history(self, output_directory=None):
+        if not hasattr(self, 'history'):
+            raise ValueError('No training history found. Train the model first.')
+
+        plt.figure(figsize=(12, 4))
+        plt.subplot(1, 2, 1)
+        plt.plot(self.history.history['loss'], label='Train Loss')
+        plt.plot(self.history.history['val_loss'], label='Validation Loss')
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.legend()
+
+        plt.subplot(1, 2, 2)
+        plt.plot(self.history.history['accuracy'], label='Train Accuracy')
+        plt.plot(self.history.history['val_accuracy'], label='Validation Accuracy')
+        plt.xlabel('Epochs')
+        plt.ylabel('Accuracy')
+        plt.legend()
+
+        if output_directory:
+            if not os.path.exists(output_directory):
+                os.makedirs(output_directory)
+            plt.savefig(os.path.join(output_directory, 'training_history.png'))
+
+        plt.show()

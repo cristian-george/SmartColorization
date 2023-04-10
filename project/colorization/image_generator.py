@@ -5,56 +5,51 @@ from skimage.color import gray2rgb
 from utils import get_lab
 
 
+def preprocess_image(image):
+    L, ab = get_lab(image)
+    L = gray2rgb(L)
+
+    return L, ab
+
+
 class ImageGenerator:
-    __dir_iterator = None
-    __encoder = None
-    n = 0
-    batch_size = 0
+    def __init__(self, directory, batch_size, image_size=(224, 224), shuffle=True, classes=None):
+        self.datagen = ImageDataGenerator(
+            rescale=1. / 255,
+            rotation_range=20,
+            width_shift_range=0.2,
+            height_shift_range=0.2,
+            horizontal_flip=True,
+            vertical_flip=False,
+            fill_mode='nearest'
+        )
 
-    def __init__(self, directory, encoder, target_size=(224, 224), batch_size=16, classes=None):
-        data_generator = ImageDataGenerator(rescale=1. / 255)
-        self.__dir_iterator = data_generator.flow_from_directory(
-            directory=directory,
-            target_size=target_size,
+        self.dirIterator = self.datagen.flow_from_directory(
+            directory,
+            target_size=image_size,
             batch_size=batch_size,
-            color_mode='rgb',
             classes=classes,
-            class_mode=None)
+            color_mode='rgb',
+            class_mode=None,
+            shuffle=shuffle)
 
-        self.__encoder = encoder
-        self.n = self.__dir_iterator.n
-        self.batch_size = batch_size
-
-    def __preprocess_image(self, image):
-        # Get the L and AB channels of the image
-        L, ab = get_lab(image)
-
-        # Predict the (7,7,512) tensor based on lightness
-        L = gray2rgb(L)
-        L = L.reshape((1, 224, 224, 3))
-
-        encoder_prediction = self.__encoder.predict(L, verbose=0)
-        encoder_prediction = encoder_prediction.reshape((7, 7, 512))
-        return encoder_prediction, ab
-
-    def __preprocess_batch(self, batch):
-        x = []
-        y = []
-
-        for image in batch:
-            prediction, ab = self.__preprocess_image(image)
-
-            # Append the prediction and AB channels to the x and Y lists
-            x.append(prediction)
-            y.append(ab)
-
-        # Convert the x and Y lists to numpy arrays
-        x = np.array(x)
-        y = np.array(y)
-
-        return x, y
+        self.samples = self.dirIterator.n
 
     def generator(self):
-        for batch in self.__dir_iterator:
-            # Yield the x and Y arrays
-            yield self.__preprocess_batch(batch)
+        for batch in self.dirIterator:
+            x = []
+            y = []
+
+            for image in batch:
+                l, ab = preprocess_image(image)
+
+                # Append the L channel to the x list and AB channels to the y lists
+                x.append(l)
+                y.append(ab)
+
+            # Convert the x and y lists to numpy arrays
+            x = np.array(x)
+            y = np.array(y)
+
+            # Yield the x and y arrays
+            yield x, y
