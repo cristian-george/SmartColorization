@@ -8,7 +8,7 @@ from keras.layers import Conv2D, BatchNormalization, UpSampling2D
 from keras.optimizers import Adam
 from matplotlib import pyplot as plt
 
-from utils import check_gpu_available
+from utils import limit_gpu_memory
 
 
 class ColorizationModel:
@@ -16,7 +16,7 @@ class ColorizationModel:
         self.autoencoder = None
         self.history = None
 
-        check_gpu_available()
+        limit_gpu_memory(memory_limit=3072)
 
     def __build_encoder(self):
         vgg19 = VGG19(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
@@ -91,6 +91,9 @@ class ColorizationModel:
     def summary(self, expand_nested=True, show_trainable=True):
         self.autoencoder.summary(expand_nested=expand_nested,
                                  show_trainable=show_trainable)
+
+    def load_weights(self, weights_path):
+        self.autoencoder.load_weights(weights_path)
 
     def save_model(self, model_path):
         self.autoencoder.save(model_path)

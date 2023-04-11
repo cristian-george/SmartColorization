@@ -52,6 +52,20 @@ def check_gpu_available():
         print("Using cpu: {} threads".format(num_threads))
 
 
+def limit_gpu_memory(memory_limit=1024):
+    gpus = tf.config.list_physical_devices('GPU')
+    if gpus:
+        try:
+            tf.config.set_logical_device_configuration(
+                gpus[0],
+                [tf.config.LogicalDeviceConfiguration(memory_limit=memory_limit)])
+            logical_gpus = tf.config.list_logical_devices('GPU')
+            print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+        except RuntimeError as e:
+            # Virtual devices must be set before GPUs have been initialized
+            print(e)
+
+
 def convert_to_tflite(saved_model_path, tflite_model_path):
     converter = tf.lite.TFLiteConverter.from_saved_model(saved_model_path)
     tflite_model = converter.convert()

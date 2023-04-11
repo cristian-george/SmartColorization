@@ -5,24 +5,19 @@ from skimage.color import gray2rgb
 from utils import get_lab
 
 
-def preprocess_image(image):
-    L, ab = get_lab(image)
-    L = gray2rgb(L)
-
-    return L, ab
-
-
 class ImageGenerator:
-    def __init__(self, directory, batch_size, image_size=(224, 224), shuffle=True, classes=None):
-        self.datagen = ImageDataGenerator(
-            rescale=1. / 255,
-            rotation_range=20,
-            width_shift_range=0.2,
-            height_shift_range=0.2,
-            horizontal_flip=True,
-            vertical_flip=False,
-            fill_mode='nearest'
-        )
+    def __init__(self, directory, batch_size, image_size=(224, 224), shuffle=True, augment=False, classes=None):
+        if augment:
+            self.datagen = ImageDataGenerator(
+                rescale=1. / 255,
+                rotation_range=20,
+                width_shift_range=0.2,
+                height_shift_range=0.2,
+                horizontal_flip=True,
+                vertical_flip=False,
+            )
+        else:
+            self.datagen = ImageDataGenerator(rescale=1. / 255)
 
         self.dirIterator = self.datagen.flow_from_directory(
             directory,
@@ -41,7 +36,8 @@ class ImageGenerator:
             y = []
 
             for image in batch:
-                l, ab = preprocess_image(image)
+                l, ab = get_lab(image)
+                l = gray2rgb(l)
 
                 # Append the L channel to the x list and AB channels to the y lists
                 x.append(l)

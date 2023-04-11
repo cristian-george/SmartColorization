@@ -1,13 +1,10 @@
 import os
 import numpy as np
-import tensorflow as tf
 from skimage.io import imsave
 from skimage.color import lab2rgb, rgb2lab, gray2rgb
-from utils import check_gpu_available, load_image, resize_image, normalize_image, denormalize_image
 
-check_gpu_available()
-
-vgg19_model = tf.keras.models.load_model('models/vgg19.h5')
+from model import ColorizationModel
+from utils import load_image, resize_image, normalize_image, denormalize_image
 
 
 def predict_image(model, input_path, result_path):
@@ -20,10 +17,7 @@ def predict_image(model, input_path, result_path):
     gray_img = gray2rgb(lum)
     gray_img = gray_img.reshape((1, 224, 224, 3))
 
-    prediction = vgg19_model.predict(gray_img, verbose=0)
-    prediction = prediction.reshape((1, 7, 7, 512))
-
-    ab = model.predict(prediction, verbose=0)
+    ab = model.predict(gray_img)
 
     denormalize_image(ab, 128)
     result = np.zeros((224, 224, 3))
@@ -39,11 +33,10 @@ def predict_image(model, input_path, result_path):
 
 INPUTS_PATH = "images/inputs/"
 RESULTS_PATH = "images/results/"
-MODEL_PATH = "models/"
+MODEL_PATH = "model_checkpoints/"
 
 
-def predict_dir_images(model_name):
-    model = tf.keras.models.load_model(MODEL_PATH + model_name)
+def predict_dir_images(model):
     for filename in os.listdir(INPUTS_PATH):
         input_path = INPUTS_PATH + filename
         result_path = RESULTS_PATH + 'result_' + filename
@@ -51,7 +44,12 @@ def predict_dir_images(model_name):
 
 
 def main():
-    predict_dir_images(model_name='colorization_model_flowers_checkpoint1.h5')
+    model_weights_path = MODEL_PATH + 'colorization_model_epoch_10.h5'
+    colorization_model = ColorizationModel()
+    colorization_model.build()
+    colorization_model.load_weights(model_weights_path)
+
+    predict_dir_images(colorization_model)
     # model = tf.keras.models.load_model(MODEL_PATH + 'colorization_model_flowers_checkpoint1.h5')
     # # model.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
     #
