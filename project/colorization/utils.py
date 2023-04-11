@@ -66,6 +66,18 @@ def limit_gpu_memory(memory_limit=1024):
             print(e)
 
 
+def check_cuda_support():
+    if tf.test.is_built_with_cuda():
+        print("TensorFlow was built with CUDA support")
+    else:
+        print("TensorFlow was not built with CUDA support")
+
+    if tf.test.is_built_with_gpu_support():
+        print("TensorFlow was built with cuDNN support")
+    else:
+        print("TensorFlow was not built with cuDNN support")
+
+
 def convert_to_tflite(saved_model_path, tflite_model_path):
     converter = tf.lite.TFLiteConverter.from_saved_model(saved_model_path)
     tflite_model = converter.convert()
