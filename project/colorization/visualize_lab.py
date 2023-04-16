@@ -4,33 +4,25 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def extract_single_dim_from_lab_convert_to_rgb(image, channel):
-    result = np.zeros(image.shape)
-    if channel != 0:
-        result[:, :, 0] = 80  # needs brightness to plot the image along 1st or 2nd axis
-    result[:, :, channel] = image[:, :, channel]
+def luminance2rgb(lab_image):
+    result = np.zeros(lab_image.shape)
+    result[:, :, 0] = lab_image[:, :, 0]
     result = lab2rgb(result)
     return result
 
 
-def extract_ab_from_lab_convert_to_rgb(image):
-    result = np.zeros(image.shape)
-    result[:, :, 0] = 80  # needs brightness to plot the image along 1st or 2nd axis
-    result[:, :, 1:] = image[:, :, 1:]
+def chroma2rgb(lab_image):
+    result = np.zeros(lab_image.shape)
+    result[:, :, 0] = 80  # needs luminance to plot the image along 1st or 2nd axis
+    result[:, :, 1:] = lab_image[:, :, 1:]
     result = lab2rgb(result)
     return result
 
 
-def plot_lab_spectrum():
-    # Get image path from console input
-    img_path = input("Enter the image path: ")
-
-    # Load image
-    rgb = img_to_array(load_img(img_path), dtype='uint8')
-    lab = rgb2lab(rgb / 255.0)
-
-    lab_l = extract_single_dim_from_lab_convert_to_rgb(lab, 0)
-    lab_ab = extract_ab_from_lab_convert_to_rgb(lab)
+def visualize_lab(rgb_image):
+    lab = rgb2lab(rgb_image / 255.0)
+    lab_l = luminance2rgb(lab)
+    lab_ab = chroma2rgb(lab)
     lab = (lab + [0, 128, 128]) / [100, 255, 255]
 
     # Plot the results
@@ -38,7 +30,7 @@ def plot_lab_spectrum():
     n_cols = 2
 
     fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols)
-    data = [('RGB image', rgb), ('CIELAB image', lab),
+    data = [('RGB image', rgb_image), ('CIELAB image', lab),
             ('luminance (L)', lab_l), ('chrominance (ab)', lab_ab)]
 
     for i in range(0, n_rows):
@@ -49,8 +41,11 @@ def plot_lab_spectrum():
             axes[i][j].imshow(img)
             axes[i][j].axis('off')
 
-    plt.savefig('images/figures/fig.jpg')
-    plt.show()
+    plt.savefig('images/figures/fig.svg', format='svg', dpi=1000)
+    # plt.show()
 
 
-plot_lab_spectrum()
+if __name__ == "__main__":
+    img_path = 'images/results/result_gray06.jpg'
+    image = img_to_array(load_img(img_path), dtype='uint8')
+    visualize_lab(image)

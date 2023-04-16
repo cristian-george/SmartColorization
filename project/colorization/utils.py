@@ -64,6 +64,11 @@ def limit_gpu_memory(memory_limit=1024):
         except RuntimeError as e:
             # Virtual devices must be set before GPUs have been initialized
             print(e)
+    else:
+        num_threads = os.cpu_count()
+        tf.config.threading.set_inter_op_parallelism_threads(num_threads=num_threads)
+        tf.config.threading.set_intra_op_parallelism_threads(num_threads=num_threads)
+        print("Using cpu: {} threads".format(num_threads))
 
 
 def check_cuda_support():

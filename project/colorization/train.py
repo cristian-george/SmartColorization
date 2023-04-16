@@ -4,7 +4,7 @@ from model import ColorizationModel
 colorization_model = ColorizationModel()
 colorization_model.build()
 colorization_model.summary()
-colorization_model.compile(learning_rate=1e-4)
+colorization_model.compile(learning_rate=1e-5)
 
 # Prepare train_generator and validation_generator
 dataset_name = 'flowers'
@@ -24,6 +24,7 @@ epochs = 50
 steps_per_epoch = train_data.samples // batch_size
 validation_steps = valid_data.samples // batch_size
 
-colorization_model.train(train_generator, valid_generator, epochs, steps_per_epoch, validation_steps)
-colorization_model.save_model('models/colorization_model_flowers.h5')
+colorization_model.train(train_generator, valid_generator, epochs, steps_per_epoch, validation_steps,
+                         checkpoints_directory='models/flowers_checkpoints')
+colorization_model.save_model('models/flowers_checkpoints/colorization_model_flowers.h5')
 colorization_model.plot_history()

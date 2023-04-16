@@ -33,7 +33,7 @@ def predict_image(model, input_path, result_path):
 
 INPUTS_PATH = "images/inputs/"
 RESULTS_PATH = "images/results/"
-MODEL_PATH = "model_checkpoints/"
+MODEL_PATH = "models/"
 
 
 def predict_dir_images(model):
@@ -44,19 +44,19 @@ def predict_dir_images(model):
 
 
 def main():
-    model_weights_path = MODEL_PATH + 'colorization_model_epoch_10.h5'
+    model_weights_path = MODEL_PATH + 'places365_checkpoints/colorization_model_epoch_05.h5'
     colorization_model = ColorizationModel()
     colorization_model.build()
     colorization_model.load_weights(model_weights_path)
 
+    # Colorize every image from a directory
     predict_dir_images(colorization_model)
-    # model = tf.keras.models.load_model(MODEL_PATH + 'colorization_model_flowers_checkpoint1.h5')
-    # # model.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
-    #
-    # filename = 'flower05.jpg'
+
+    # Colorize an image
+    # filename = 'gray08.jpg'
     # input_path = INPUTS_PATH + filename
     # result_path = RESULTS_PATH + 'result_' + filename
-    # predict_image(model, input_path, result_path)
+    # predict_image(colorization_model, input_path, result_path)
 
 
 if __name__ == "__main__":

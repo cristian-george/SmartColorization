@@ -1,10 +1,10 @@
 import json
 import os
 
-from keras import Model
+from keras import Model, Input
 from keras.applications import VGG19
 from keras.callbacks import ModelCheckpoint
-from keras.layers import Conv2D, BatchNormalization, UpSampling2D
+from keras.layers import Conv2D, BatchNormalization, UpSampling2D, Concatenate
 from keras.optimizers import Adam
 from matplotlib import pyplot as plt
 
@@ -19,11 +19,13 @@ class ColorizationModel:
         limit_gpu_memory(memory_limit=3072)
 
     def __build_encoder(self):
-        vgg19 = VGG19(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
+        input_tensor = Input(shape=(224, 224, 1))
+        input_tensor = Concatenate(axis=-1)([input_tensor] * 3)
+        vgg19 = VGG19(input_tensor=input_tensor, include_top=False, weights='imagenet')
 
         # Set the encoder layers to non-trainable
-        for layer in vgg19.layers:
-            layer.trainable = False
+        # for layer in vgg19.layers:
+        #     layer.trainable = False
 
         self.encoder = Model(name='encoder',
                              inputs=vgg19.input,
@@ -68,13 +70,13 @@ class ColorizationModel:
                                  metrics=['accuracy'])
 
     def train(self, train_generator, val_generator, epochs, steps_per_epoch, val_steps,
-              checkpoints_directory='model_checkpoints'):
+              checkpoints_directory='models'):
         if not os.path.exists(checkpoints_directory):
             os.makedirs(checkpoints_directory)
 
         model_checkpoint = ModelCheckpoint(
             filepath=os.path.join(checkpoints_directory, 'colorization_model_epoch_{epoch:02d}.h5'),
-            save_freq=5 * steps_per_epoch,
+            save_freq=steps_per_epoch // 4,
             save_best_only=False,
             save_weights_only=True)
 
@@ -86,7 +88,7 @@ class ColorizationModel:
                                             callbacks=[model_checkpoint])
 
     def predict(self, image):
-        return self.autoencoder.predict(image)
+        return self.autoencoder.predict(image, verbose=False)
 
     def summary(self, expand_nested=True, show_trainable=True):
         self.autoencoder.summary(expand_nested=expand_nested,

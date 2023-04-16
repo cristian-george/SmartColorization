@@ -1,6 +1,5 @@
 import numpy as np
 from keras.preprocessing.image import ImageDataGenerator
-from skimage.color import gray2rgb
 
 from utils import get_lab
 
@@ -37,7 +36,6 @@ class ImageGenerator:
 
             for image in batch:
                 l, ab = get_lab(image)
-                l = gray2rgb(l)
 
                 # Append the L channel to the x list and AB channels to the y lists
                 x.append(l)
