@@ -1,4 +1,4 @@
-from keras_preprocessing.image import img_to_array, load_img
+from keras.utils import load_img, img_to_array
 from skimage.color import rgb2lab, lab2rgb
 import matplotlib.pyplot as plt
 import numpy as np
@@ -34,17 +34,17 @@ def plot_lab_spectrum():
     lab = (lab + [0, 128, 128]) / [100, 255, 255]
 
     # Plot the results
-    N_ROWS = 2
-    N_COLS = 2
+    n_rows = 2
+    n_cols = 2
 
-    fig, axes = plt.subplots(nrows=N_ROWS, ncols=N_COLS)
-    data = [('rgb image', rgb), ('lab image', lab),
-            ('L: lightness', lab_l), ('ab: chromatic', lab_ab)]
+    fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols)
+    data = [('RGB image', rgb), ('CIELAB image', lab),
+            ('luminance (L)', lab_l), ('chrominance (ab)', lab_ab)]
 
-    for i in range(0, N_ROWS):
-        for j in range(0, N_COLS):
-            title = data[N_ROWS * i + j][0]
-            img = data[N_ROWS * i + j][1]
+    for i in range(0, n_rows):
+        for j in range(0, n_cols):
+            title = data[n_rows * i + j][0]
+            img = data[n_rows * i + j][1]
             axes[i][j].set_title(title)
             axes[i][j].imshow(img)
             axes[i][j].axis('off')
