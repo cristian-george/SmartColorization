@@ -14,10 +14,9 @@ def predict_image(model, input_path, result_path):
 
     lab = rgb2lab(resized_image)
     lum = lab[:, :, 0]
-    gray_img = gray2rgb(lum)
-    gray_img = gray_img.reshape((1, 224, 224, 3))
+    lum = lum.reshape((1, 224, 224, 1))
 
-    ab = model.predict(gray_img)
+    ab = model.predict(lum)
 
     denormalize_image(ab, 128)
     result = np.zeros((224, 224, 3))
@@ -44,7 +43,7 @@ def predict_dir_images(model):
 
 
 def main():
-    model_weights_path = MODEL_PATH + 'places365_checkpoints/colorization_model_epoch_05.h5'
+    model_weights_path = MODEL_PATH + 'flowers_checkpoints/colorization_model_epoch_01.h5'
     colorization_model = ColorizationModel()
     colorization_model.build()
     colorization_model.load_weights(model_weights_path)
