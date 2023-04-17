@@ -1,7 +1,7 @@
 import numpy as np
 from keras.preprocessing.image import ImageDataGenerator
 
-from utils import get_lab
+from utils import rgb2lab_split_image
 
 
 class ImageGenerator:
@@ -35,7 +35,7 @@ class ImageGenerator:
             y = []
 
             for image in batch:
-                l, ab = get_lab(image)
+                l, ab = rgb2lab_split_image(image)
 
                 # Append the L channel to the x list and AB channels to the y lists
                 x.append(l)

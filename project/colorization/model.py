@@ -1,25 +1,33 @@
 import json
 import os
 
+import numpy as np
 from keras import Model, Input
 from keras.applications import VGG19
 from keras.callbacks import ModelCheckpoint
-from keras.layers import Conv2D, BatchNormalization, UpSampling2D, Concatenate
+from keras.layers import Concatenate, Conv2D, BatchNormalization, UpSampling2D
 from keras.optimizers import Adam
 from matplotlib import pyplot as plt
+from skimage.color import lab2rgb
+from skimage.transform import resize
 
-from utils import limit_gpu_memory
+from utils import check_gpu_support, limit_gpu_memory, increase_cpu_num_threads, rgb2lab_split_image
 
 
 class ColorizationModel:
-    def __init__(self):
+    def __init__(self, gpu_memory_limit=1024):
         self.autoencoder = None
         self.history = None
+        self.shape = (224, 224, 1)
 
-        limit_gpu_memory(memory_limit=3072)
+        use_gpu = check_gpu_support()
+        if use_gpu:
+            limit_gpu_memory(memory_limit=gpu_memory_limit)
+        else:
+            increase_cpu_num_threads(num_threads=os.cpu_count())
 
     def __build_encoder(self):
-        input_tensor = Input(shape=(224, 224, 1))
+        input_tensor = Input(shape=self.shape)
         input_tensor = Concatenate(axis=-1)([input_tensor] * 3)
         vgg19 = VGG19(input_tensor=input_tensor, include_top=False, weights='imagenet')
 
@@ -88,7 +96,22 @@ class ColorizationModel:
                                             callbacks=[model_checkpoint])
 
     def predict(self, image):
-        return self.autoencoder.predict(image, verbose=False)
+        luminance, _ = rgb2lab_split_image(image)
+
+        lum = resize(luminance, self.shape, anti_aliasing=True)
+        lum = np.reshape(lum, (1, self.shape[0], self.shape[1], 1))
+
+        chrom = self.autoencoder.predict(lum, verbose=False)
+        chrom = np.reshape(chrom, (self.shape[0], self.shape[1], 2))
+
+        chrominance = resize(chrom, (image.shape[0], image.shape[1])) * 128.0
+
+        result = np.zeros((image.shape[0], image.shape[1], 3))
+        result[:, :, 0] = luminance
+        result[:, :, 1:] = chrominance
+        result = lab2rgb(result) * 255.0
+
+        return result
 
     def summary(self, expand_nested=True, show_trainable=True):
         self.autoencoder.summary(expand_nested=expand_nested,

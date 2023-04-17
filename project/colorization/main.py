@@ -1,62 +1,37 @@
 import os
-import numpy as np
 from skimage.io import imsave
-from skimage.color import lab2rgb, rgb2lab, gray2rgb
 
 from model import ColorizationModel
-from utils import load_image, resize_image, normalize_image, denormalize_image
+from utils import load_image
+
+images_inputs_path = "images/inputs/"
+images_results_path = "images/results/"
+models_path = "models/"
 
 
 def predict_image(model, input_path, result_path):
-    original_image, resized_image, input_shape = load_image(input_path, (224, 224), anti_aliasing=True)
-    normalize_image(original_image, 255)
-    normalize_image(resized_image, 255)
-
-    lab = rgb2lab(resized_image)
-    lum = lab[:, :, 0]
-    lum = lum.reshape((1, 224, 224, 1))
-
-    ab = model.predict(lum)
-
-    denormalize_image(ab, 128)
-    result = np.zeros((224, 224, 3))
-    result[:, :, 1:] = ab
-
-    result = resize_image(result, (input_shape[0], input_shape[1]), anti_aliasing=True)
-    result[:, :, 0] = rgb2lab(original_image)[:, :, 0]
-    result = lab2rgb(result)
-    denormalize_image(result, 255)
-
+    image = load_image(input_path)
+    result = model.predict(image)
     imsave(result_path, result.astype('uint8'))
 
 
-INPUTS_PATH = "images/inputs/"
-RESULTS_PATH = "images/results/"
-MODEL_PATH = "models/"
-
-
 def predict_dir_images(model):
-    for filename in os.listdir(INPUTS_PATH):
-        input_path = INPUTS_PATH + filename
-        result_path = RESULTS_PATH + 'result_' + filename
+    for filename in os.listdir(images_inputs_path):
+        input_path = images_inputs_path + filename
+        result_path = images_results_path + 'result_' + filename
         predict_image(model, input_path, result_path)
 
 
-def main():
-    model_weights_path = MODEL_PATH + 'flowers_checkpoints/colorization_model_epoch_01.h5'
-    colorization_model = ColorizationModel()
-    colorization_model.build()
-    colorization_model.load_weights(model_weights_path)
+model_weights_path = models_path + 'flowers_checkpoints/colorization_model_epoch_10.h5'
+colorization_model = ColorizationModel()
+colorization_model.build()
+colorization_model.load_weights(model_weights_path)
 
-    # Colorize every image from a directory
-    predict_dir_images(colorization_model)
+# Colorize every image from a directory
+predict_dir_images(colorization_model)
 
-    # Colorize an image
-    # filename = 'gray08.jpg'
-    # input_path = INPUTS_PATH + filename
-    # result_path = RESULTS_PATH + 'result_' + filename
-    # predict_image(colorization_model, input_path, result_path)
-
-
-if __name__ == "__main__":
-    main()
+# Colorize an image
+# filename = 'image.jpg'
+# input_path = images_inputs_path + filename
+# result_path = images_results_path + 'result_' + filename
+# predict_image(colorization_model, input_path, result_path)

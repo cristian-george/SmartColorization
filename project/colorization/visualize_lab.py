@@ -41,11 +41,11 @@ def visualize_lab(rgb_image):
             axes[i][j].imshow(img)
             axes[i][j].axis('off')
 
-    plt.savefig('images/figures/fig.svg', format='svg', dpi=1000)
-    # plt.show()
+    plt.savefig('images/figures/figure.svg', format='svg', dpi=1000)
+    plt.show()
 
 
 if __name__ == "__main__":
-    img_path = 'images/results/result_gray06.jpg'
+    img_path = 'images/image.jpg'
     image = img_to_array(load_img(img_path), dtype='uint8')
     visualize_lab(image)

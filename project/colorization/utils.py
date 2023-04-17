@@ -1,86 +1,61 @@
-import os
-
-from keras.utils import load_img, img_to_array
-from skimage.color import rgb2lab
-from skimage.transform import resize
+import numpy as np
 import tensorflow as tf
+from keras.utils import load_img, img_to_array
+from skimage.color import rgb2lab, gray2rgb
+from tensorflow.python.eager.context import LogicalDeviceConfiguration
+from tensorflow.python.framework import config
 
 
-def load_image(image_path, output_shape=(224, 224), anti_aliasing=False):
-    original_image = img_to_array(load_img(image_path))
-    input_shape = (original_image.shape[0], original_image.shape[1])
+def load_image(image_path):
+    # Load a grayscale image and normalize it
+    image = img_to_array(load_img(image_path, color_mode='grayscale')) / 255.0
 
-    resized_image = resize_image(original_image, output_shape, anti_aliasing)
-    return original_image, resized_image, input_shape
-
-
-def resize_image(image, size, anti_aliasing=False):
-    image = resize(image, size, anti_aliasing)
+    # Copy the information that is stored on the first channel to the other two channels for simulating an RGB image
+    image = gray2rgb(image)
+    image = np.reshape(image, (image.shape[0], image.shape[1], 3))
     return image
 
 
-def normalize_image(image, value):
-    image /= value
-
-
-def denormalize_image(image, value):
-    image *= value
-
-
-# Define a function to get the L and AB channels from an RGB image
-def get_lab(image):
+def rgb2lab_split_image(image):
     # Convert the image to LAB color space
     lab = rgb2lab(image)
     # Get the L channel
-    lum = lab[:, :, 0]
+    luminance = lab[:, :, 0]
     # Get the AB channels and normalize them to the range [-1, 1]
-    ab = lab[:, :, 1:] / 128.
+    chrominance = lab[:, :, 1:] / 128.0
     # Return the L and AB channels as a tuple
-    return lum, ab
-
-
-def check_gpu_available():
-    gpus = tf.config.list_physical_devices('GPU')
-    if gpus:
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
-            print("Using gpu: {}".format(gpu))
-    else:
-        num_threads = os.cpu_count()
-        tf.config.threading.set_inter_op_parallelism_threads(num_threads=num_threads)
-        tf.config.threading.set_intra_op_parallelism_threads(num_threads=num_threads)
-        print("Using cpu: {} threads".format(num_threads))
+    return luminance, chrominance
 
 
 def limit_gpu_memory(memory_limit=1024):
     gpus = tf.config.list_physical_devices('GPU')
     if gpus:
         try:
-            tf.config.set_logical_device_configuration(
-                gpus[0],
-                [tf.config.LogicalDeviceConfiguration(memory_limit=memory_limit)])
-            logical_gpus = tf.config.list_logical_devices('GPU')
-            print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+            config.set_logical_device_configuration(gpus[0], [LogicalDeviceConfiguration(memory_limit=memory_limit)])
+            print("Using GPU: {}".format(gpus[0]))
         except RuntimeError as e:
-            # Virtual devices must be set before GPUs have been initialized
             print(e)
-    else:
-        num_threads = os.cpu_count()
-        tf.config.threading.set_inter_op_parallelism_threads(num_threads=num_threads)
-        tf.config.threading.set_intra_op_parallelism_threads(num_threads=num_threads)
-        print("Using cpu: {} threads".format(num_threads))
 
 
-def check_cuda_support():
-    if tf.test.is_built_with_cuda():
+def increase_cpu_num_threads(num_threads=1):
+    cpus = tf.config.list_physical_devices('CPU')
+    if cpus:
+        try:
+            config.set_inter_op_parallelism_threads(num_threads=num_threads)
+            config.set_intra_op_parallelism_threads(num_threads=num_threads)
+            print("Using CPU: {} threads".format(num_threads))
+        except RuntimeError as e:
+            print(e)
+
+
+def check_gpu_support():
+    gpus = tf.config.list_physical_devices('GPU')
+    if tf.test.is_built_with_cuda() and tf.test.is_built_with_gpu_support() and gpus:
         print("TensorFlow was built with CUDA support")
-    else:
-        print("TensorFlow was not built with CUDA support")
-
-    if tf.test.is_built_with_gpu_support():
         print("TensorFlow was built with cuDNN support")
-    else:
-        print("TensorFlow was not built with cuDNN support")
+        return True
+
+    return False
 
 
 def convert_to_tflite(saved_model_path, tflite_model_path):
