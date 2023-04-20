@@ -10,11 +10,28 @@ class ImagePickerWidget extends StatefulWidget {
   const ImagePickerWidget({super.key});
 
   @override
-  _ImagePickerWidgetState createState() => _ImagePickerWidgetState();
+  ImagePickerWidgetState createState() => ImagePickerWidgetState();
 }
 
-class _ImagePickerWidgetState extends State<ImagePickerWidget> {
+class ImagePickerWidgetState extends State<ImagePickerWidget> {
   final _picker = ImagePicker();
+
+  late TransformationController _controller;
+  TapDownDetails? _tapDownDetails;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = TransformationController();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+
+    _controller.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +41,33 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
           child: Center(
             child: context.watch<ImageProviderData>().imageData == null
                 ? const Text('No image selected.')
-                : Image.memory(context.watch<ImageProviderData>().imageData!),
+                : GestureDetector(
+                    onDoubleTapDown: (details) {
+                      _tapDownDetails = details;
+                    },
+                    onDoubleTap: () {
+                      final position = _tapDownDetails!.localPosition;
+
+                      const double scale = 3;
+                      final x = -position.dx * (scale - 1);
+                      final y = -position.dy * (scale - 1);
+                      final zoomed = Matrix4.identity()
+                        ..translate(x, y)
+                        ..scale(scale);
+
+                      final value = _controller.value.isIdentity()
+                          ? zoomed
+                          : Matrix4.identity();
+                      _controller.value = value;
+                    },
+                    child: InteractiveViewer(
+                        clipBehavior: Clip.none,
+                        panEnabled: false,
+                        scaleEnabled: false,
+                        transformationController: _controller,
+                        child: Image.memory(
+                            context.watch<ImageProviderData>().imageData!)),
+                  ),
           ),
         ),
         Row(
