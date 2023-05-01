@@ -58,9 +58,22 @@ def check_gpu_support():
     return False
 
 
-def convert_to_tflite(saved_model_path, tflite_model_path):
-    converter = tf.lite.TFLiteConverter.from_saved_model(saved_model_path)
+def convert_h5_to_tflite(h5_model_path, tflite_model_path):
+    # Load the .h5 model
+    keras_model = tf.keras.models.load_model(h5_model_path)
+    keras_model.compile(optimizer='adam', loss='mse')
+
+    # Convert the model to a concrete function
+    concrete_function = tf.function(lambda inputs: keras_model(inputs))
+    concrete_function = concrete_function.get_concrete_function(
+        [tf.TensorSpec(shape=keras_model.inputs[i].shape, dtype=keras_model.inputs[i].dtype) for i in
+         range(len(keras_model.inputs))]
+    )
+
+    # Convert the model to TensorFlow Lite format
+    converter = tf.lite.TFLiteConverter.from_concrete_functions([concrete_function], trackable_obj=keras_model)
     tflite_model = converter.convert()
 
+    # Save the .tflite model to a file
     with open(tflite_model_path, 'wb') as f:
         f.write(tflite_model)

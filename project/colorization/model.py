@@ -135,6 +135,9 @@ class ColorizationModel:
     def load_weights(self, weights_path):
         self.autoencoder.load_weights(weights_path)
 
+    def load_model(self, model_path):
+        self.autoencoder = models.load_model(model_path, compile=False)
+
     def save_model(self, model_path):
         self.autoencoder.save(model_path)
 
