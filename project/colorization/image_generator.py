@@ -12,13 +12,14 @@ class ImageGenerator:
                 rotation_range=20,
                 width_shift_range=0.2,
                 height_shift_range=0.2,
+                fill_mode='reflect',
+                brightness_range=[0.6, 1.4],
                 horizontal_flip=True,
-                vertical_flip=False,
-            )
+                vertical_flip=False)
         else:
             self.datagen = ImageDataGenerator(rescale=1. / 255)
 
-        self.dirIterator = self.datagen.flow_from_directory(
+        self.dir_iterator = self.datagen.flow_from_directory(
             directory,
             target_size=image_size,
             batch_size=batch_size,
@@ -27,10 +28,10 @@ class ImageGenerator:
             class_mode=None,
             shuffle=shuffle)
 
-        self.samples = self.dirIterator.n
+        self.samples = self.dir_iterator.n
 
     def generator(self):
-        for batch in self.dirIterator:
+        for batch in self.dir_iterator:
             x = []
             y = []
 

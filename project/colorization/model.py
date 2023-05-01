@@ -2,16 +2,27 @@ import json
 import os
 
 import numpy as np
+import tensorflow as tf
 from keras import Model, Input
 from keras.applications import VGG19
 from keras.callbacks import ModelCheckpoint
 from keras.layers import Concatenate, Conv2D, BatchNormalization, UpSampling2D
+from keras.losses import MeanSquaredError
 from keras.optimizers import Adam
+from keras.optimizers.schedules.learning_rate_schedule import ExponentialDecay
 from matplotlib import pyplot as plt
 from skimage.color import lab2rgb
 from skimage.transform import resize
 
 from utils import check_gpu_support, limit_gpu_memory, increase_cpu_num_threads, rgb2lab_split_image
+
+
+def psnr(y_true, y_prediction):
+    return tf.image.psnr(y_true, y_prediction, max_val=1.0)
+
+
+def ssim(y_true, y_prediction):
+    return tf.reduce_mean(tf.image.ssim(y_true, y_prediction, max_val=1.0))
 
 
 class ColorizationModel:
@@ -33,7 +44,7 @@ class ColorizationModel:
 
         # Set the encoder layers to non-trainable
         # for layer in vgg19.layers:
-        #     layer.trainable = False
+        # layer.trainable = False
 
         self.encoder = Model(name='encoder',
                              inputs=vgg19.input,
@@ -43,16 +54,16 @@ class ColorizationModel:
         decoder_input = self.encoder.output  # Input(shape=(7, 7, 512))
         decoder = Conv2D(256, (3, 3), activation='relu', padding='same')(decoder_input)
         decoder = BatchNormalization()(decoder)
-        decoder = UpSampling2D((2, 2))(decoder)
+        decoder = UpSampling2D((2, 2), interpolation='bilinear')(decoder)
         decoder = Conv2D(128, (3, 3), activation='relu', padding='same')(decoder)
         decoder = BatchNormalization()(decoder)
-        decoder = UpSampling2D((2, 2))(decoder)
+        decoder = UpSampling2D((2, 2), interpolation='bilinear')(decoder)
         decoder = Conv2D(64, (3, 3), activation='relu', padding='same')(decoder)
         decoder = BatchNormalization()(decoder)
-        decoder = UpSampling2D((2, 2))(decoder)
+        decoder = UpSampling2D((2, 2), interpolation='bilinear')(decoder)
         decoder = Conv2D(32, (3, 3), activation='relu', padding='same')(decoder)
         decoder = BatchNormalization()(decoder)
-        decoder = UpSampling2D((2, 2))(decoder)
+        decoder = UpSampling2D((2, 2), interpolation='bilinear')(decoder)
         decoder = Conv2D(16, (3, 3), activation='relu', padding='same')(decoder)
         decoder = Conv2D(2, (3, 3), activation='tanh', padding='same')(decoder)
         decoder_output = UpSampling2D((2, 2))(decoder)
@@ -72,19 +83,22 @@ class ColorizationModel:
                                  inputs=autoencoder_input,
                                  outputs=autoencoder_output)
 
-    def compile(self, learning_rate=1e-4):
-        self.autoencoder.compile(optimizer=Adam(learning_rate=learning_rate),
-                                 loss='mse',
+    def compile(self, learning_rate=1e-3, decay_steps=10000, decay_rate=0.9):
+        lr_schedule = ExponentialDecay(initial_learning_rate=learning_rate,
+                                       decay_steps=decay_steps,
+                                       decay_rate=decay_rate)
+
+        self.autoencoder.compile(optimizer=Adam(learning_rate=lr_schedule),
+                                 loss=MeanSquaredError(),
                                  metrics=['accuracy'])
 
-    def train(self, train_generator, val_generator, epochs, steps_per_epoch, val_steps,
-              checkpoints_directory='models'):
+    def train(self, train_generator, val_generator, epochs, steps_per_epoch, val_steps, checkpoints_directory):
         if not os.path.exists(checkpoints_directory):
             os.makedirs(checkpoints_directory)
 
         model_checkpoint = ModelCheckpoint(
-            filepath=os.path.join(checkpoints_directory, 'colorization_model_epoch_{epoch:02d}.h5'),
-            save_freq=steps_per_epoch // 4,
+            filepath=os.path.join(checkpoints_directory, 'colorization_model_epoch_{epoch:02d}_v2.h5'),
+            save_freq=steps_per_epoch // 25,
             save_best_only=False,
             save_weights_only=True)
 
@@ -93,7 +107,8 @@ class ColorizationModel:
                                             epochs=epochs,
                                             steps_per_epoch=steps_per_epoch,
                                             validation_steps=val_steps,
-                                            callbacks=[model_checkpoint])
+                                            callbacks=[model_checkpoint],
+                                            initial_epoch=7)
 
     def predict(self, image):
         luminance, _ = rgb2lab_split_image(image)
@@ -104,7 +119,7 @@ class ColorizationModel:
         chrom = self.autoencoder.predict(lum, verbose=False)
         chrom = np.reshape(chrom, (self.shape[0], self.shape[1], 2))
 
-        chrominance = resize(chrom, (image.shape[0], image.shape[1])) * 128.0
+        chrominance = resize(chrom, (image.shape[0], image.shape[1]), anti_aliasing=True) * 128.0
 
         result = np.zeros((image.shape[0], image.shape[1], 3))
         result[:, :, 0] = luminance

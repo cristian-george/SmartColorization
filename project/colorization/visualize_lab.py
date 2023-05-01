@@ -1,3 +1,4 @@
+from imageio.v2 import imsave
 from keras.utils import load_img, img_to_array
 from skimage.color import rgb2lab, lab2rgb
 import matplotlib.pyplot as plt
@@ -37,12 +38,14 @@ def visualize_lab(rgb_image):
         for j in range(0, n_cols):
             title = data[n_rows * i + j][0]
             img = data[n_rows * i + j][1]
+            imsave('images/figures/figure_{}{}.bmp'.format(i, j), img)
+
             axes[i][j].set_title(title)
             axes[i][j].imshow(img)
             axes[i][j].axis('off')
 
-    plt.savefig('images/figures/figure.svg', format='svg', dpi=1000)
-    plt.show()
+        plt.savefig('images/figures/figure.svg', format='svg', dpi=1000)
+        plt.show()
 
 
 if __name__ == "__main__":
