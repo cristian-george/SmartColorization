@@ -186,3 +186,7 @@ fabric.properties
 
 images/inputs
 images/results
+
+models/celebA_checkpoints
+models/flowers_checkpoints
+models/places365_checkpoints
