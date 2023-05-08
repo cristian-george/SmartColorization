@@ -17,7 +17,7 @@ for layer in colorization_model.decoder.layers[2:]:
 
 decoder_output = x
 
-new_model = Model(inputs=colorization_model.encoder.input, outputs=decoder_output)
+model = Model(inputs=colorization_model.encoder.input, outputs=decoder_output)
 
 font = ImageFont.truetype("calibri.ttf", 32)
-visualkeras.layered_view(new_model, to_file='model.bmp', scale_xy=2).show()
+visualkeras.layered_view(model, to_file='model.bmp', scale_xy=2).show()
