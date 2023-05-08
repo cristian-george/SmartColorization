@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:photo_app/pages/settings_page.dart';
 
 import 'image_picker_page.dart';
 
@@ -101,13 +102,17 @@ class _HomePageState extends State<HomePage>
                 height: 25,
                 child: Icon(Icons.settings),
               ),
-              onPressed: () {},
-              /*onPressed: () {
+              onPressed: () {
+                _animationController.stop();
                 Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const SettingsPage()));
-              },*/
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsPage(),
+                  ),
+                ).then((value) {
+                  _animationController.forward();
+                });
+              },
             ),
           ],
         ),

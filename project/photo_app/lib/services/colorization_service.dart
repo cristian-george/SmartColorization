@@ -1,22 +1,40 @@
 import 'dart:typed_data';
 import 'package:image/image.dart' as img;
+import 'package:photo_app/constants.dart';
+import 'package:photo_app/utils/shared_preferences.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:flutter_color_models/flutter_color_models.dart';
 
 enum ColorizationStatus { initialized, loaded, applied, finished }
 
 class ColorizationService {
+  static late String model;
+
+  static void _initializeModel() {
+    switch (sharedPreferences.getInt('dataset')) {
+      case 0:
+        model = modelPlaces365;
+        break;
+      case 1:
+        model = modelCelebA;
+        break;
+      case 2:
+        model = modelFlowers;
+        break;
+    }
+  }
+
   static Future<Uint8List> colorizeImage(
       Uint8List imageData, Function(ColorizationStatus) callback) async {
+    _initializeModel();
     callback(ColorizationStatus.initialized);
 
     // Load the model
     var interpreterOptions = InterpreterOptions()
       ..useNnApiForAndroid = true
       ..threads = 8;
-    final interpreter = await Interpreter.fromAsset(
-        'colorization_model_flowers.tflite',
-        options: interpreterOptions);
+    final interpreter =
+        await Interpreter.fromAsset(model, options: interpreterOptions);
 
     interpreter.invoke();
 

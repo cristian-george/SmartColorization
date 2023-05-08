@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:photo_app/pages/home_page.dart';
+import 'package:photo_app/pages/image_picker_page.dart';
+import 'package:photo_app/utils/shared_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  sharedPreferences = await SharedPreferences.getInstance();
+  initSharedPreferences();
+
   runApp(const PhotoApp());
 }
 
@@ -15,7 +23,7 @@ class PhotoApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const HomePage(),
+      home: const ImagePickerPage(), //const HomePage(),
       debugShowCheckedModeBanner: false,
     );
   }
