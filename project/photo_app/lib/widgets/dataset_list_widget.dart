@@ -32,8 +32,8 @@ class _DatasetPopupState extends State<DatasetPopup> {
         ),
       ),
       content: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.8,
-        height: MediaQuery.of(context).size.width * 0.5,
+        width: MediaQuery.of(context).size.width * 0.7,
+        height: MediaQuery.of(context).size.height * 0.3,
         child: DatasetListWidget(
           onSelectionChanged: (dataset) {
             setState(() {

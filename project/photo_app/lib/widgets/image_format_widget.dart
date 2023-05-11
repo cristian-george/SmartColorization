@@ -32,8 +32,8 @@ class _ImageFormatPopupState extends State<ImageFormatPopup> {
         ),
       ),
       content: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.8,
-        height: MediaQuery.of(context).size.width * 0.8,
+        width: MediaQuery.of(context).size.width * 0.7,
+        height: MediaQuery.of(context).size.height * 0.4,
         child: ImageFormatListWidget(
           onSelectionChanged: (format) {
             setState(() {
