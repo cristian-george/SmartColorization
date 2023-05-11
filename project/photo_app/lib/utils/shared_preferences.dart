@@ -14,6 +14,14 @@ enum Datasets {
   flowers,
 }
 
+enum ImageFormats {
+  png,
+  jpg,
+  jpeg,
+  tiff,
+  gif,
+}
+
 initSharedPreferences() {
   if (!sharedPreferences.containsKey('theme')) {
     sharedPreferences.setInt('theme', Themes.automatic.index);
@@ -21,5 +29,9 @@ initSharedPreferences() {
 
   if (!sharedPreferences.containsKey('dataset')) {
     sharedPreferences.setInt('dataset', Datasets.places365.index);
+  }
+
+  if (!sharedPreferences.containsKey('format')) {
+    sharedPreferences.setInt('format', ImageFormats.png.index);
   }
 }

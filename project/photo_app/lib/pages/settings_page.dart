@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:photo_app/utils/shared_preferences.dart';
 import 'package:photo_app/widgets/dataset_list_widget.dart';
 import '../widgets/custom_list_widget.dart';
+import '../widgets/image_format_widget.dart';
 import '../widgets/theme_list_widget.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -25,6 +26,16 @@ class _SettingsPageState extends State<SettingsPage> {
         });
         break;
       case 1:
+        showGeneralDialog(
+          context: context,
+          pageBuilder: (BuildContext context, Animation<double> animation,
+                  Animation<double> secondaryAnimation) =>
+              const ImageFormatPopup(title: "Image file formats"),
+        ).then((value) {
+          setState(() {});
+        });
+        break;
+      case 2:
         showGeneralDialog(
           context: context,
           pageBuilder: (BuildContext context, Animation<double> animation,
@@ -77,6 +88,7 @@ class _SettingsListState extends State<SettingsList> {
   _updateSettingsList() {
     final dataset = sharedPreferences.getInt('dataset')!;
     final theme = sharedPreferences.getInt('theme')!;
+    final format = sharedPreferences.getInt('format')!;
 
     _settings = [
       {
@@ -86,6 +98,11 @@ class _SettingsListState extends State<SettingsList> {
       },
       {
         "id": 1,
+        "name": 'Image file formats',
+        "trailing": ImageFormats.values[format].toString().split('.')[1]
+      },
+      {
+        "id": 2,
         "name": 'Themes',
         "trailing": Themes.values[theme].toString().split('.')[1]
       },

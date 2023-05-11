@@ -137,6 +137,24 @@ class ColorizationService {
     return img.encodeJpg(grayscaleImage);
   }
 
+  static bool isImageGrayscale(Uint8List imageData) {
+    img.Image image = img.decodeImage(imageData)!;
+
+    for (int y = 0; y < image.height; y++) {
+      for (int x = 0; x < image.width; x++) {
+        img.Color pixel = image.getPixel(x, y);
+        int red = pixel.r.toInt();
+        int green = pixel.g.toInt();
+        int blue = pixel.b.toInt();
+
+        if (red != green || red != blue || green != blue) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   static Future<List<LabColor>> _rgbToLab(img.Image rgbImage) async {
     List<LabColor> result = [];
     for (int y = 0; y < rgbImage.height; y++) {
