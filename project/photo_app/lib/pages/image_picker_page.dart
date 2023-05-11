@@ -1,19 +1,15 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:photo_app/pages/settings_page.dart';
-import 'package:photofilters/filters/filters.dart';
-import 'package:photofilters/filters/preset_filters.dart';
 
 import '../services/colorization_service.dart';
 import '../utils/shared_preferences.dart';
-import '../widgets/filtered_image_list_widget.dart';
 
 class ImagePickerPage extends StatefulWidget {
   const ImagePickerPage({Key? key}) : super(key: key);
@@ -22,10 +18,19 @@ class ImagePickerPage extends StatefulWidget {
   State<ImagePickerPage> createState() => _ImagePickerPageState();
 }
 
-class _ImagePickerPageState extends State<ImagePickerPage> {
+class _ImagePickerPageState extends State<ImagePickerPage>
+    with SingleTickerProviderStateMixin {
   final _picker = ImagePicker();
 
   late TransformationController _controller;
+  late AnimationController _animationController;
+  Animation<Matrix4>? _animation;
+
+  final double _minScale = 1;
+  final double _maxScale = 4;
+
+  OverlayEntry? entry;
+
   TapDownDetails? _tapDownDetails;
 
   ColorizationStatus? _status;
@@ -41,6 +46,16 @@ class _ImagePickerPageState extends State<ImagePickerPage> {
     super.initState();
 
     _controller = TransformationController();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    )
+      ..addListener(() => _controller.value = _animation!.value)
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _removeOverlay();
+        }
+      });
   }
 
   @override
@@ -48,6 +63,7 @@ class _ImagePickerPageState extends State<ImagePickerPage> {
     super.dispose();
 
     _controller.dispose();
+    _animationController.dispose();
   }
 
   @override
@@ -145,15 +161,7 @@ class _ImagePickerPageState extends State<ImagePickerPage> {
                                         : Matrix4.identity();
                                     _controller.value = value;
                                   },
-                                  child: InteractiveViewer(
-                                    clipBehavior: Clip.none,
-                                    transformationController: _controller,
-                                    child: Image.memory(
-                                      !_isEyeShown
-                                          ? _originalImageData!
-                                          : _processedImageData!,
-                                    ),
-                                  ),
+                                  child: _buildImage(),
                                 );
                               },
                             ),
@@ -177,7 +185,7 @@ class _ImagePickerPageState extends State<ImagePickerPage> {
                                     _isEyeShown
                                         ? Icons.remove_red_eye_outlined
                                         : Icons.remove_red_eye_sharp,
-                                    size: 35,
+                                    size: 30,
                                     color: Colors.white,
                                   ),
                                 ),
@@ -185,10 +193,6 @@ class _ImagePickerPageState extends State<ImagePickerPage> {
                           ],
                         ),
                 ),
-              ),
-              //buildFilters(),
-              const SizedBox(
-                height: 50,
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -255,7 +259,11 @@ class _ImagePickerPageState extends State<ImagePickerPage> {
                   color: Colors.white30,
                 ),
                 const CircularProgressIndicator(),
-                Text(_modifyText()),
+                Container(
+                  height: 50,
+                  color: Colors.white.withOpacity(0.5),
+                  child: Text(_modifyText()),
+                ),
               ],
             )
         ],
@@ -293,7 +301,7 @@ class _ImagePickerPageState extends State<ImagePickerPage> {
     return "";
   }
 
-  img.Image? _image;
+/*  img.Image? _image;
   Filter filter = presetFiltersList.first;
 
   Widget _buildFilters() {
@@ -310,7 +318,7 @@ class _ImagePickerPageState extends State<ImagePickerPage> {
         });
       },
     );
-  }
+  }*/
 
   Future<Size> _getImageSize(Uint8List imageData) async {
     final imageCodec = await instantiateImageCodec(imageData);
@@ -341,5 +349,76 @@ class _ImagePickerPageState extends State<ImagePickerPage> {
       _isGrayscale = true;
       setState(() {});
     }
+  }
+
+  Widget _buildImage() {
+    return Builder(
+      builder: (context) => InteractiveViewer(
+        clipBehavior: Clip.none,
+        transformationController: _controller,
+        panEnabled: false,
+        minScale: _minScale,
+        maxScale: _maxScale,
+        onInteractionStart: (details) {
+          if (details.pointerCount < 2) return;
+
+          if (entry == null) {
+            _showOverlay(context);
+          }
+        },
+        onInteractionEnd: (details) {
+          if (details.pointerCount != 1) return;
+
+          _resetAnimation();
+        },
+        child: Image.memory(
+          !_isEyeShown ? _originalImageData! : _processedImageData!,
+        ),
+      ),
+    );
+  }
+
+  void _resetAnimation() {
+    _animation = Matrix4Tween(
+      begin: _controller.value,
+      end: Matrix4.identity(),
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.linear,
+    ));
+
+    _animationController.forward(from: 0);
+  }
+
+  void _showOverlay(BuildContext context) {
+    final renderBox = context.findRenderObject()! as RenderBox;
+    final offset = renderBox.localToGlobal(Offset.zero);
+    final size = MediaQuery.of(context).size;
+
+    entry = OverlayEntry(
+      builder: (context) {
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: Container(color: Colors.white),
+            ),
+            Positioned(
+              left: offset.dx,
+              top: offset.dy,
+              width: size.width,
+              child: _buildImage(),
+            ),
+          ],
+        );
+      },
+    );
+
+    final overlay = Overlay.of(context);
+    overlay.insert(entry!);
+  }
+
+  void _removeOverlay() {
+    entry?.remove();
+    entry = null;
   }
 }
