@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:photo_app/utils/shared_preferences.dart';
-import 'package:photo_app/widgets/dataset_list_widget.dart';
 import '../widgets/custom_list_widget.dart';
 import '../widgets/image_format_widget.dart';
 import '../widgets/theme_list_widget.dart';
@@ -20,22 +19,12 @@ class _SettingsPageState extends State<SettingsPage> {
           context: context,
           pageBuilder: (BuildContext context, Animation<double> animation,
                   Animation<double> secondaryAnimation) =>
-              const DatasetPopup(title: "Datasets"),
-        ).then((value) {
-          setState(() {});
-        });
-        break;
-      case 1:
-        showGeneralDialog(
-          context: context,
-          pageBuilder: (BuildContext context, Animation<double> animation,
-                  Animation<double> secondaryAnimation) =>
               const ImageFormatPopup(title: "Image file formats"),
         ).then((value) {
           setState(() {});
         });
         break;
-      case 2:
+      case 1:
         showGeneralDialog(
           context: context,
           pageBuilder: (BuildContext context, Animation<double> animation,
@@ -52,7 +41,16 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(
+        centerTitle: true,
+        title: const Text(
+          'Settings',
+          style: TextStyle(color: Colors.black),
+        ),
+        iconTheme: const IconThemeData(color: Colors.black),
+        backgroundColor: Colors.white,
+        elevation: 0,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(10),
         child: Column(
@@ -86,23 +84,17 @@ class _SettingsListState extends State<SettingsList> {
   late List<Map<String, dynamic>> _settings;
 
   _updateSettingsList() {
-    final dataset = sharedPreferences.getInt('dataset')!;
     final theme = sharedPreferences.getInt('theme')!;
     final format = sharedPreferences.getInt('format')!;
 
     _settings = [
       {
         "id": 0,
-        "name": 'Datasets',
-        "trailing": Datasets.values[dataset].toString().split('.')[1]
-      },
-      {
-        "id": 1,
         "name": 'Image file formats',
         "trailing": ImageFormats.values[format].toString().split('.')[1]
       },
       {
-        "id": 2,
+        "id": 1,
         "name": 'Themes',
         "trailing": Themes.values[theme].toString().split('.')[1]
       },

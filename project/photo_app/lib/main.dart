@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:photo_app/pages/home_page.dart';
-import 'package:photo_app/pages/image_picker_page.dart';
 import 'package:photo_app/utils/shared_preferences.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -23,7 +22,7 @@ class PhotoApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const ImagePickerPage(), //const HomePage(),
+      home: const HomePage(),
       debugShowCheckedModeBanner: false,
     );
   }

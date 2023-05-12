@@ -42,3 +42,9 @@ flutter:
     - assets/colorization_model_places365.tflite
     - assets/colorization_model_celebA.tflite
     - assets/colorization_model_flowers.tflite
+    - assets/home_page_photos/places365_01.png
+    - assets/home_page_photos/places365_02.png
+    - assets/home_page_photos/celebA_01.png
+    - assets/home_page_photos/celebA_02.png
+    - assets/home_page_photos/flowers_01.png
+    - assets/home_page_photos/flowers_02.png

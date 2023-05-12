@@ -6,10 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:photo_app/pages/settings_page.dart';
 
 import '../services/colorization_service.dart';
 import '../utils/shared_preferences.dart';
+import '../widgets/dataset_list_widget.dart';
 
 class ImagePickerPage extends StatefulWidget {
   const ImagePickerPage({Key? key}) : super(key: key);
@@ -30,8 +30,6 @@ class _ImagePickerPageState extends State<ImagePickerPage>
   final double _maxScale = 4;
 
   OverlayEntry? entry;
-
-  TapDownDetails? _tapDownDetails;
 
   ColorizationStatus? _status;
 
@@ -69,17 +67,26 @@ class _ImagePickerPageState extends State<ImagePickerPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Image Colorization'),
+        centerTitle: true,
+        title: const Text(
+          'Image Colorization',
+          style: TextStyle(color: Colors.black),
+        ),
+        iconTheme: const IconThemeData(color: Colors.black),
+        backgroundColor: Colors.white,
+        elevation: 0,
         actions: [
           PopupMenuButton(
             onSelected: (item) => _onSelectedPopupMenuItem(item),
             itemBuilder: (context) => [
               const PopupMenuItem(
                 value: 0,
-                child: Text('Settings'),
+                child: Text('Choose dataset'),
               ),
             ],
+            icon: const Icon(Icons.dataset),
           ),
         ],
       ),
@@ -142,25 +149,7 @@ class _ImagePickerPageState extends State<ImagePickerPage>
 
                                     print('Image coordinates: ($x, $y)');
                                   },
-                                  onDoubleTapDown: (details) {
-                                    _tapDownDetails = details;
-                                  },
-                                  onDoubleTap: () {
-                                    final position =
-                                        _tapDownDetails!.localPosition;
-
-                                    const double scale = 3;
-                                    final x = -position.dx * (scale - 1);
-                                    final y = -position.dy * (scale - 1);
-                                    final zoomed = Matrix4.identity()
-                                      ..translate(x, y)
-                                      ..scale(scale);
-
-                                    final value = _controller.value.isIdentity()
-                                        ? zoomed
-                                        : Matrix4.identity();
-                                    _controller.value = value;
-                                  },
+                                  onDoubleTapDown: (details) {},
                                   child: _buildImage(),
                                 );
                               },
@@ -196,46 +185,14 @@ class _ImagePickerPageState extends State<ImagePickerPage>
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                //crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   ElevatedButton(
-                    onPressed: () async {
-                      _processedImageData = null;
-                      _isEyeShown = false;
-
-                      final pickedFile =
-                          await _picker.pickImage(source: ImageSource.gallery);
-                      if (pickedFile != null) {
-                        Uint8List imageData = await pickedFile.readAsBytes();
-
-                        if (mounted) {
-                          final bool isGrayscale =
-                              ColorizationService.isImageGrayscale(imageData);
-                          if (isGrayscale) return;
-
-                          _convertToGrayscale(imageData);
-                        }
-                      }
-                    },
+                    onPressed: _pickImage,
                     child: const Text('Pick an Image'),
                   ),
                   if (_isGrayscale)
                     ElevatedButton(
-                      onPressed: () async {
-                        _processedImageData =
-                            await ColorizationService.colorizeImage(
-                          _originalImageData!,
-                          (status) {
-                            _status = status;
-                            setState(() {});
-                          },
-                        );
-
-                        _isGrayscale = false;
-                        _isEyeShown = true;
-                        _status = null;
-                        setState(() {});
-                      },
+                      onPressed: _colorizeImage,
                       child: const Text('Colorize'),
                     ),
                   if (_processedImageData != null)
@@ -255,9 +212,6 @@ class _ImagePickerPageState extends State<ImagePickerPage>
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  color: Colors.white30,
-                ),
                 const CircularProgressIndicator(),
                 Container(
                   height: 50,
@@ -274,12 +228,11 @@ class _ImagePickerPageState extends State<ImagePickerPage>
   void _onSelectedPopupMenuItem(int item) {
     switch (item) {
       case 0:
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const SettingsPage(),
-          ),
-        );
+        showGeneralDialog(
+            context: context,
+            pageBuilder: (BuildContext context, Animation<double> animation,
+                    Animation<double> secondaryAnimation) =>
+                const DatasetPopup(title: "Datasets"));
         break;
     }
   }
@@ -339,16 +292,6 @@ class _ImagePickerPageState extends State<ImagePickerPage>
     file.writeAsBytesSync(imageData);
 
     GallerySaver.saveImage(file.path, albumName: 'Pictures');
-  }
-
-  void _convertToGrayscale(Uint8List imageData) async {
-    final Uint8List grayscaleImageData =
-        await ColorizationService.grayscaleImage(imageData);
-    if (mounted) {
-      _originalImageData = grayscaleImageData;
-      _isGrayscale = true;
-      setState(() {});
-    }
   }
 
   Widget _buildImage() {
@@ -420,5 +363,43 @@ class _ImagePickerPageState extends State<ImagePickerPage>
   void _removeOverlay() {
     entry?.remove();
     entry = null;
+  }
+
+  void _pickImage() async {
+    _processedImageData = null;
+    _isEyeShown = false;
+
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      Uint8List imageData = await pickedFile.readAsBytes();
+
+      if (mounted) {
+        final bool isGrayscale =
+            ColorizationService.isImageGrayscale(imageData);
+
+        if (!isGrayscale) {
+          imageData = await ColorizationService.grayscaleImage(imageData);
+        }
+
+        _originalImageData = imageData;
+        _isGrayscale = true;
+        setState(() {});
+      }
+    }
+  }
+
+  void _colorizeImage() async {
+    _processedImageData = await ColorizationService.colorizeImage(
+      _originalImageData!,
+      (status) {
+        _status = status;
+        setState(() {});
+      },
+    );
+
+    _isGrayscale = false;
+    _isEyeShown = true;
+    _status = null;
+    setState(() {});
   }
 }
