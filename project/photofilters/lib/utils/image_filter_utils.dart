@@ -145,7 +145,7 @@ void convolute(
     for (int x = 0; x < w; x++) {
       int sy = y;
       int sx = x;
-      int dstOff = (y * w + x) * 4;
+      int dstOff = (y * w + x) * 3;
       num r = bias, g = bias, b = bias;
       for (int cy = 0; cy < side; cy++) {
         for (int cx = 0; cx < side; cx++) {
@@ -153,7 +153,7 @@ void convolute(
           int scx = sx + cx - halfSide;
 
           if (scy >= 0 && scy < sh && scx >= 0 && scx < sw) {
-            int srcOff = (scy * sw + scx) * 4;
+            int srcOff = (scy * sw + scx) * 3;
             num wt = weights[cy * side + cx];
 
             r += bytes[srcOff] * wt;

@@ -4,8 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:photo_app/pages/user_guided_colorization_page.dart';
+import 'package:photo_app/utils/convolution_filters.dart';
 import 'package:scroll_loop_auto_scroll/scroll_loop_auto_scroll.dart';
 
+import '../utils/color_filters.dart';
 import 'automatic_colorization_page.dart';
 import 'image_filters_page.dart';
 
@@ -108,6 +111,7 @@ class _AlgorithmSelectionPageState extends State<AlgorithmSelectionPage>
                     scrollDirection: Axis.horizontal,
                     gap: 0,
                     duplicateChild: 10,
+                    duration: const Duration(minutes: 2),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -128,18 +132,49 @@ class _AlgorithmSelectionPageState extends State<AlgorithmSelectionPage>
                         ),
                         AlgorithmOption(
                           text: 'User Guided Image Colorization',
-                          onSelected: () {},
+                          onSelected: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    UserGuidedColorizationPage(
+                                  imageData: _isCropped
+                                      ? _croppedImageData!
+                                      : _originalImageData!,
+                                ),
+                              ),
+                            );
+                          },
                         ),
                         AlgorithmOption(
-                          text: 'Image Enhancement',
+                          text: 'Image Color Filters',
                           onSelected: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => ImageFiltersPage(
+                                  title: 'Image Color Filters',
                                   imageData: _isCropped
                                       ? _croppedImageData!
                                       : _originalImageData!,
+                                  filters: colorFilters,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        AlgorithmOption(
+                          text: 'Image Convolution Filters',
+                          onSelected: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ImageFiltersPage(
+                                  title: 'Image Convolution Filters',
+                                  imageData: _isCropped
+                                      ? _croppedImageData!
+                                      : _originalImageData!,
+                                  filters: convolutionFilters,
                                 ),
                               ),
                             );
@@ -276,7 +311,7 @@ class AlgorithmOption extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20.0),
-        color: Colors.grey.withAlpha(25),
+        color: Colors.black.withAlpha(25),
       ),
       height: 40,
       margin: const EdgeInsets.only(left: 20),

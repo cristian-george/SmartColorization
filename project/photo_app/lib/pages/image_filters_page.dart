@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:photo_app/utils/filter_utils.dart';
 import 'package:photofilters/filters/filters.dart';
-import 'package:photofilters/filters/preset_filters.dart';
 import 'package:image/image.dart' as img;
 
 import '../widgets/image_filters/filtered_image_list_widget.dart';
@@ -12,10 +11,14 @@ import '../widgets/image_filters/filtered_image_widget.dart';
 class ImageFiltersPage extends StatefulWidget {
   const ImageFiltersPage({
     Key? key,
+    required this.title,
     required this.imageData,
+    required this.filters,
   }) : super(key: key);
 
+  final String title;
   final Uint8List imageData;
+  final List<Filter> filters;
 
   @override
   State<ImageFiltersPage> createState() => _ImageFiltersPageState();
@@ -23,7 +26,7 @@ class ImageFiltersPage extends StatefulWidget {
 
 class _ImageFiltersPageState extends State<ImageFiltersPage> {
   late img.Image _image;
-  Filter _filter = presetFiltersList.first;
+  late Filter _filter;
 
   @override
   void initState() {
@@ -31,6 +34,7 @@ class _ImageFiltersPageState extends State<ImageFiltersPage> {
 
     FilterUtils.clearCache();
     _image = img.decodeImage(widget.imageData)!;
+    _filter = widget.filters.first;
   }
 
   @override
@@ -39,14 +43,13 @@ class _ImageFiltersPageState extends State<ImageFiltersPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         centerTitle: true,
-        title: const Text(
-          'Image Filters',
-          style: TextStyle(color: Colors.black),
+        title: Text(
+          widget.title,
+          style: const TextStyle(color: Colors.black),
         ),
         iconTheme: const IconThemeData(color: Colors.black),
         backgroundColor: Colors.white,
         elevation: 0,
-        actions: [],
       ),
       body: Padding(
         padding: const EdgeInsets.only(
@@ -88,11 +91,13 @@ class _ImageFiltersPageState extends State<ImageFiltersPage> {
               color: Colors.grey,
             ),
             FilteredImageListWidget(
-              filters: presetFiltersList,
+              filters: widget.filters,
               image: _image,
               onChangedFilter: (filter) {
-                _filter = filter;
-                setState(() {});
+                if (_filter != filter) {
+                  _filter = filter;
+                  setState(() {});
+                }
               },
             ),
           ],

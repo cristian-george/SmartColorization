@@ -68,7 +68,7 @@ class _HomePageState extends State<HomePage>
               scrollDirection: Axis.horizontal,
               gap: 0,
               duplicateChild: 30,
-              duration: const Duration(seconds: 600),
+              duration: const Duration(minutes: 10),
               enableScrollInput: false,
               child: Row(
                 children: _images,

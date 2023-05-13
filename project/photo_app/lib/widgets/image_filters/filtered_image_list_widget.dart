@@ -20,10 +20,8 @@ class FilteredImageListWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const double height = 150;
-
     return Container(
-      height: height,
+      height: 150,
       color: Colors.white,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
