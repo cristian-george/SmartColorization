@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:photofilters/filters/filters.dart';
 
-import '../utils/filter_utils.dart';
+import '../../utils/filter_utils.dart';
 
 class FilteredImageWidget extends StatelessWidget {
   final Filter filter;

@@ -2,8 +2,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
-import 'filtered_image_widget.dart';
 import 'package:photofilters/filters/filters.dart';
+
+import 'filtered_image_widget.dart';
 
 class FilteredImageListWidget extends StatelessWidget {
   final List<Filter> filters;

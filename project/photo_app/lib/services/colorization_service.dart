@@ -126,7 +126,6 @@ class ColorizationService {
 
     callback(ColorizationStatus.finished);
 
-    // Return the colorized image as Uint8List
     return img.encodeJpg(newRgb);
   }
 

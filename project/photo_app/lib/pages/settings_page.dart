@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:photo_app/utils/shared_preferences.dart';
+import '../enums.dart';
 import '../widgets/custom_list_widget.dart';
-import '../widgets/image_format_widget.dart';
-import '../widgets/theme_list_widget.dart';
+import '../widgets/settings/image_format_widget.dart';
+import '../widgets/settings/theme_list_widget.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);

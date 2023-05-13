@@ -5,9 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:gallery_saver/gallery_saver.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../enums.dart';
 import '../services/colorization_service.dart';
 import '../utils/shared_preferences.dart';
-import '../widgets/dataset_list_widget.dart';
+import '../widgets/settings/dataset_list_widget.dart';
 
 class AutomaticColorizationPage extends StatefulWidget {
   const AutomaticColorizationPage({

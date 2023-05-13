@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../utils/shared_preferences.dart';
+
+import '../../enums.dart';
+import '../../utils/shared_preferences.dart';
 
 class ImageFormatPopup extends StatefulWidget {
   const ImageFormatPopup({Key? key, required this.title}) : super(key: key);

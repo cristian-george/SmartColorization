@@ -2,12 +2,12 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:photo_app/utils/filter_utils.dart';
-import 'package:photo_app/widgets/filtered_image_widget.dart';
 import 'package:photofilters/filters/filters.dart';
 import 'package:photofilters/filters/preset_filters.dart';
 import 'package:image/image.dart' as img;
 
-import '../widgets/filtered_image_list_widget.dart';
+import '../widgets/image_filters/filtered_image_list_widget.dart';
+import '../widgets/image_filters/filtered_image_widget.dart';
 
 class ImageFiltersPage extends StatefulWidget {
   const ImageFiltersPage({

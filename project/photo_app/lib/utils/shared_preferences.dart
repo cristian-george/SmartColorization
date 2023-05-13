@@ -1,28 +1,10 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../enums.dart';
+
 late SharedPreferences sharedPreferences;
 
-enum Themes {
-  light,
-  dark,
-  automatic,
-}
-
-enum Datasets {
-  places365,
-  celebA,
-  flowers,
-}
-
-enum ImageFormats {
-  png,
-  jpg,
-  jpeg,
-  tiff,
-  gif,
-}
-
-initSharedPreferences() {
+void initSharedPreferences() {
   if (!sharedPreferences.containsKey('theme')) {
     sharedPreferences.setInt('theme', Themes.automatic.index);
   }
