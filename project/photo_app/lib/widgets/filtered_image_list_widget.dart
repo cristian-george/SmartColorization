@@ -61,7 +61,6 @@ class FilteredImageListWidget extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     filter.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
