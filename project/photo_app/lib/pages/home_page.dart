@@ -1,20 +1,21 @@
-import 'package:flutter/material.dart';
-import 'package:photo_app/pages/settings_page.dart';
+import 'dart:typed_data';
 
-import 'image_picker_page.dart';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:photo_app/pages/settings_page.dart';
+import 'package:scroll_loop_auto_scroll/scroll_loop_auto_scroll.dart';
+
+import 'algorithm_selection_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  _HomePageState createState() => _HomePageState();
+  State createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  late ScrollController _scrollController;
-  late AnimationController _animationController;
-
   final List<String> _imageAssets = [
     'assets/home_page_photos/places365_01.png',
     'assets/home_page_photos/celebA_01.png',
@@ -24,32 +25,23 @@ class _HomePageState extends State<HomePage>
     'assets/home_page_photos/flowers_02.png',
   ];
 
+  final List<Card> _images = [];
+
   @override
   void initState() {
     super.initState();
 
-    _scrollController = ScrollController();
-    _animationController =
-        AnimationController(vsync: this, duration: const Duration(seconds: 30))
-          ..addListener(() {
-            if (_animationController.isCompleted) {
-              _animationController.repeat();
-            }
-
-            _scrollController.jumpTo(
-                _scrollController.position.maxScrollExtent *
-                    _animationController.value);
-          });
-
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-
-    _animationController.dispose();
-    _scrollController.dispose();
+    for (var asset in _imageAssets) {
+      _images.add(Card(
+        margin: const EdgeInsets.all(10),
+        child: Image.asset(
+          asset,
+          fit: BoxFit.cover,
+          width: 300,
+          height: 300,
+        ),
+      ));
+    }
   }
 
   @override
@@ -65,24 +57,31 @@ class _HomePageState extends State<HomePage>
         backgroundColor: Colors.white,
         elevation: 0,
       ),
-      body: SizedBox(
-        height: MediaQuery.of(context).size.height / 2.5,
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          controller: _scrollController,
-          itemCount: _imageAssets.length,
-          itemBuilder: (BuildContext context, int index) {
-            return Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Card(
-                child: Image.asset(
-                  _imageAssets[index],
-                  fit: BoxFit.cover,
-                  width: 300,
-                ),
+      body: Padding(
+        padding: const EdgeInsets.only(
+          left: 10,
+          right: 10,
+        ),
+        child: Column(
+          children: [
+            ScrollLoopAutoScroll(
+              scrollDirection: Axis.horizontal,
+              gap: 0,
+              duplicateChild: 30,
+              duration: const Duration(seconds: 600),
+              enableScrollInput: false,
+              child: Row(
+                children: _images,
               ),
-            );
-          },
+            ),
+            const Padding(
+              padding: EdgeInsets.only(top: 10, bottom: 20),
+              child: Divider(
+                height: 5,
+                color: Colors.grey,
+              ),
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: BottomAppBar(
@@ -108,15 +107,10 @@ class _HomePageState extends State<HomePage>
                 child: Icon(Icons.settings),
               ),
               onPressed: () {
-                _animationController.stop();
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const SettingsPage(),
-                  ),
-                ).then((value) {
-                  _animationController.forward();
-                });
+                  MaterialPageRoute(builder: (context) => const SettingsPage()),
+                ).then((value) {});
               },
             ),
           ],
@@ -126,16 +120,20 @@ class _HomePageState extends State<HomePage>
       floatingActionButton: FloatingActionButton(
         heroTag: 'pickImage',
         backgroundColor: Colors.white,
-        onPressed: () {
-          _animationController.stop();
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const ImagePickerPage(),
-            ),
-          ).then((value) {
-            _animationController.forward();
-          });
+        onPressed: () async {
+          final pickedFile =
+              await ImagePicker().pickImage(source: ImageSource.gallery);
+          if (pickedFile != null) {
+            Uint8List imageData = await pickedFile.readAsBytes();
+
+            if (mounted) {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          AlgorithmSelectionPage(imageData: imageData)));
+            }
+          }
         },
         child: const Icon(
           Icons.add,
