@@ -209,7 +209,7 @@ class _AlgorithmSelectionPageState extends State<AlgorithmSelectionPage>
           toolbarTitle: '',
           toolbarColor: Colors.white,
           toolbarWidgetColor: Colors.black,
-          activeControlsWidgetColor: Colors.black,
+          activeControlsWidgetColor: Colors.green,
           initAspectRatio: CropAspectRatioPreset.original,
           lockAspectRatio: false,
         ),

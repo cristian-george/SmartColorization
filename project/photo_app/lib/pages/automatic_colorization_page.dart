@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import '../enums.dart';
 import '../services/colorization_service.dart';
 import '../utils/shared_preferences.dart';
+import '../widgets/image_widget.dart';
 import '../widgets/settings/dataset_list_widget.dart';
 
 class AutomaticColorizationPage extends StatefulWidget {
@@ -25,15 +26,6 @@ class AutomaticColorizationPage extends StatefulWidget {
 
 class _AutomaticColorizationPageState extends State<AutomaticColorizationPage>
     with SingleTickerProviderStateMixin {
-  late TransformationController _controller;
-  late AnimationController _animationController;
-  Animation<Matrix4>? _animation;
-
-  final double _minScale = 1;
-  final double _maxScale = 4;
-
-  OverlayEntry? entry;
-
   Uint8List? _originalImageData;
   Uint8List? _processedImageData;
 
@@ -46,26 +38,6 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage>
 
     _originalImageData = widget.imageData;
     _convertToGrayscale();
-
-    _controller = TransformationController();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    )
-      ..addListener(() => _controller.value = _animation!.value)
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _removeOverlay();
-        }
-      });
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-
-    _controller.dispose();
-    _animationController.dispose();
   }
 
   @override
@@ -99,35 +71,10 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage>
           children: [
             Expanded(
               child: Center(
-                child: Stack(
-                  children: [
-                    _buildImage(),
-                    if (_processedImageData != null)
-                      GestureDetector(
-                        onTapDown: (details) {
-                          setState(() {
-                            _isEyeShown = false;
-                          });
-                        },
-                        onTapUp: (details) {
-                          setState(() {
-                            _isEyeShown = true;
-                          });
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.all(5),
-                          padding: const EdgeInsets.all(2.5),
-                          color: Colors.black.withOpacity(0.5),
-                          child: Icon(
-                            _isEyeShown
-                                ? Icons.remove_red_eye_outlined
-                                : Icons.remove_red_eye_sharp,
-                            size: 30,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                  ],
+                child: ImageWidget(
+                  originalImageData: _originalImageData,
+                  processedImageData: _processedImageData,
+                  isEyeShown: _isEyeShown,
                 ),
               ),
             ),
@@ -176,84 +123,13 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage>
     GallerySaver.saveImage(file.path, albumName: 'Pictures');
   }
 
-  Widget _buildImage() {
-    return Builder(
-      builder: (context) => InteractiveViewer(
-        clipBehavior: Clip.none,
-        transformationController: _controller,
-        panEnabled: false,
-        minScale: _minScale,
-        maxScale: _maxScale,
-        onInteractionStart: (details) {
-          if (details.pointerCount < 2) return;
-
-          if (entry == null) {
-            _showOverlay(context);
-          }
-        },
-        onInteractionEnd: (details) {
-          if (details.pointerCount != 1) return;
-
-          _resetAnimation();
-        },
-        child: Image.memory(
-          !_isEyeShown ? _originalImageData! : _processedImageData!,
-        ),
-      ),
-    );
-  }
-
-  void _resetAnimation() {
-    _animation = Matrix4Tween(
-      begin: _controller.value,
-      end: Matrix4.identity(),
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.linear,
-    ));
-
-    _animationController.forward(from: 0);
-  }
-
-  void _showOverlay(BuildContext context) {
-    final renderBox = context.findRenderObject()! as RenderBox;
-    final offset = renderBox.localToGlobal(Offset.zero);
-    final size = MediaQuery.of(context).size;
-
-    entry = OverlayEntry(
-      builder: (context) {
-        return Stack(
-          children: [
-            Positioned.fill(
-              child: Container(color: Colors.white),
-            ),
-            Positioned(
-              left: offset.dx,
-              top: offset.dy,
-              width: size.width,
-              child: _buildImage(),
-            ),
-          ],
-        );
-      },
-    );
-
-    final overlay = Overlay.of(context);
-    overlay.insert(entry!);
-  }
-
-  void _removeOverlay() {
-    entry?.remove();
-    entry = null;
-  }
-
-  void _convertToGrayscale() async {
+  void _convertToGrayscale() {
     final bool isGrayscale =
         ColorizationService.isImageGrayscale(_originalImageData!);
 
     if (!isGrayscale) {
       _originalImageData =
-          await ColorizationService.grayscaleImage(_originalImageData!);
+          ColorizationService.grayscaleImage(_originalImageData!);
     }
 
     _isGrayscale = true;

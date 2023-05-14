@@ -129,7 +129,7 @@ class ColorizationService {
     return img.encodeJpg(newRgb);
   }
 
-  static Future<Uint8List> grayscaleImage(Uint8List imageData) async {
+  static Uint8List grayscaleImage(Uint8List imageData) {
     img.Image image = img.decodeImage(imageData)!;
     img.Image grayscaleImage = img.grayscale(image);
 
