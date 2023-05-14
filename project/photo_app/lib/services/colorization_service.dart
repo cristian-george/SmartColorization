@@ -10,31 +10,25 @@ enum ColorizationStatus { initialized, loaded, applied, finished }
 class ColorizationService {
   static late String model;
 
-  static void _initializeModel() {
-    switch (sharedPreferences.getInt('dataset')) {
-      case 0:
-        model = modelPlaces365;
-        break;
-      case 1:
-        model = modelCelebA;
-        break;
-      case 2:
-        model = modelFlowers;
-        break;
-    }
-  }
-
   static Future<Uint8List> colorizeImage(
       Uint8List imageData, Function(ColorizationStatus) callback) async {
-    _initializeModel();
+    // Initialize the model
+    final index = sharedPreferences.getInt('dataset');
+    if (index != null) {
+      model = models[index];
+    }
+
     callback(ColorizationStatus.initialized);
 
     // Load the model
-    var interpreterOptions = InterpreterOptions()
+    final options = InterpreterOptions()
       ..useNnApiForAndroid = true
       ..threads = 8;
-    final interpreter =
-        await Interpreter.fromAsset(model, options: interpreterOptions);
+
+    final interpreter = await Interpreter.fromAsset(
+      model,
+      options: options,
+    );
 
     interpreter.invoke();
 
@@ -43,7 +37,7 @@ class ColorizationService {
     // Preprocessing
     img.Image inputImage = img.decodeImage(imageData)!;
 
-    var labImage = await _rgbToLab(inputImage);
+    var labImage = _rgbToLab(inputImage);
 
     // Lightness in original dimension
     List<double> originalLightness =
@@ -56,7 +50,7 @@ class ColorizationService {
       interpolation: img.Interpolation.cubic,
     );
 
-    labImage = await _rgbToLab(resizedImage);
+    labImage = _rgbToLab(resizedImage);
 
     List<double> lum =
         labImage.map((pixel) => pixel.lightness.toDouble()).toList();
@@ -92,7 +86,7 @@ class ColorizationService {
     }
 
     // Convert LAB colors back to RGB and create a colorized image
-    img.Image resultImage = img.Image(width: 224, height: 224, numChannels: 3);
+    img.Image resultImage = img.Image(width: 224, height: 224);
 
     for (int y = 0; y < 224; y++) {
       for (int x = 0; x < 224; x++) {
@@ -109,7 +103,7 @@ class ColorizationService {
       interpolation: img.Interpolation.cubic,
     );
 
-    labImage = await _rgbToLab(result);
+    labImage = _rgbToLab(result);
 
     var newRgb = img.Image(
         width: inputImage.width, height: inputImage.height, numChannels: 3);
@@ -154,7 +148,7 @@ class ColorizationService {
     return true;
   }
 
-  static Future<List<LabColor>> _rgbToLab(img.Image rgbImage) async {
+  static List<LabColor> _rgbToLab(img.Image rgbImage) {
     List<LabColor> result = [];
     for (int y = 0; y < rgbImage.height; y++) {
       for (int x = 0; x < rgbImage.width; x++) {
@@ -170,9 +164,8 @@ class ColorizationService {
     return result;
   }
 
-  static Future<img.Image> _labToRgb(
-      List<LabColor> labColors, int width, int height) async {
-    img.Image result = img.Image(width: width, height: height, numChannels: 3);
+  static img.Image _labToRgb(List<LabColor> labColors, int width, int height) {
+    img.Image result = img.Image(width: width, height: height);
 
     for (int y = 0; y < height; y++) {
       for (int x = 0; x < width; x++) {

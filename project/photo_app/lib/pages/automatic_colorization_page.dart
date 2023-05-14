@@ -1,13 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:gallery_saver/gallery_saver.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:photo_app/widgets/save_image_widget.dart';
 
-import '../enums.dart';
 import '../services/colorization_service.dart';
-import '../utils/shared_preferences.dart';
+import '../widgets/button_option_widget.dart';
 import '../widgets/image_widget.dart';
 import '../widgets/settings/dataset_list_widget.dart';
 
@@ -54,12 +50,15 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage>
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          if (_processedImageData == null)
-            IconButton(
-              onPressed: _chooseDataset,
-              tooltip: 'Choose dataset',
-              icon: const Icon(Icons.dataset),
-            )
+          _processedImageData == null
+              ? IconButton(
+                  onPressed: _chooseDataset,
+                  tooltip: 'Choose dataset',
+                  icon: const Icon(Icons.dataset),
+                )
+              : SaveImageWidget(
+                  imageData: _processedImageData!,
+                ),
         ],
       ),
       body: Padding(
@@ -78,24 +77,26 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage>
                 ),
               ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                if (_isGrayscale)
-                  ElevatedButton(
-                    onPressed: _colorizeImage,
-                    child: const Text('Colorize'),
-                  ),
-                if (_processedImageData != null)
-                  ElevatedButton(
-                    onPressed: () async {
-                      _saveImageToGallery(
-                        _processedImageData!,
-                      );
-                    },
-                    child: const Text('Save to Gallery'),
-                  ),
-              ],
+            if (_isGrayscale)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 10),
+                child: Divider(
+                  height: 5,
+                  color: Colors.grey,
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  if (_isGrayscale)
+                    ButtonOptionWidget(
+                      text: 'Colorize image',
+                      onSelected: _colorizeImage,
+                    ),
+                ],
+              ),
             ),
           ],
         ),
@@ -109,18 +110,6 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage>
         pageBuilder: (BuildContext context, Animation<double> animation,
                 Animation<double> secondaryAnimation) =>
             const DatasetPopup(title: "Datasets"));
-  }
-
-  Future<void> _saveImageToGallery(Uint8List imageData) async {
-    int index = sharedPreferences.getInt('format')!;
-    String format = ImageFormats.values[index].toString().split('.')[1];
-
-    final tempDir = await getTemporaryDirectory();
-    File file =
-        await File('${tempDir.path}/${DateTime.now()}.$format').create();
-    file.writeAsBytesSync(imageData);
-
-    GallerySaver.saveImage(file.path, albumName: 'Pictures');
   }
 
   void _convertToGrayscale() {

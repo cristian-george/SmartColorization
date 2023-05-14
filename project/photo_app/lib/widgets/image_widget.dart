@@ -118,6 +118,8 @@ class _ImageWidgetState extends State<ImageWidget>
         },
         child: Image.memory(
           !_isEyeShown ? widget.originalImageData! : widget.processedImageData!,
+          width: MediaQuery.of(context).size.width,
+          fit: BoxFit.cover,
         ),
       ),
     );

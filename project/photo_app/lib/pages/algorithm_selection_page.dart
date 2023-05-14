@@ -9,6 +9,8 @@ import 'package:photo_app/utils/convolution_filters.dart';
 import 'package:scroll_loop_auto_scroll/scroll_loop_auto_scroll.dart';
 
 import '../utils/color_filters.dart';
+import '../widgets/button_option_widget.dart';
+import '../widgets/image_widget.dart';
 import 'automatic_colorization_page.dart';
 import 'image_filters_page.dart';
 
@@ -24,15 +26,6 @@ class AlgorithmSelectionPage extends StatefulWidget {
 
 class _AlgorithmSelectionPageState extends State<AlgorithmSelectionPage>
     with SingleTickerProviderStateMixin {
-  late TransformationController _controller;
-  late AnimationController _animationController;
-  Animation<Matrix4>? _animation;
-
-  final double _minScale = 1;
-  final double _maxScale = 4;
-
-  OverlayEntry? entry;
-
   Uint8List? _originalImageData;
   Uint8List? _croppedImageData;
 
@@ -42,25 +35,7 @@ class _AlgorithmSelectionPageState extends State<AlgorithmSelectionPage>
   void initState() {
     super.initState();
 
-    _controller = TransformationController();
-    _animationController = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 200))
-      ..addListener(() => _controller.value = _animation!.value)
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _removeOverlay();
-        }
-      });
-
     _originalImageData = widget.imageData;
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-
-    _controller.dispose();
-    _animationController.dispose();
   }
 
   @override
@@ -95,7 +70,12 @@ class _AlgorithmSelectionPageState extends State<AlgorithmSelectionPage>
               children: [
                 Expanded(
                   child: Center(
-                    child: _buildImage(),
+                    child: ImageWidget(
+                      originalImageData:
+                          !_isCropped ? _originalImageData : _croppedImageData,
+                      processedImageData: null,
+                      isEyeShown: false,
+                    ),
                   ),
                 ),
                 const Padding(
@@ -111,11 +91,12 @@ class _AlgorithmSelectionPageState extends State<AlgorithmSelectionPage>
                     scrollDirection: Axis.horizontal,
                     gap: 0,
                     duplicateChild: 10,
+                    delay: const Duration(seconds: 0),
                     duration: const Duration(minutes: 2),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        AlgorithmOption(
+                        ButtonOptionWidget(
                           text: 'Automatic Image Colorization',
                           onSelected: () {
                             Navigator.push(
@@ -130,7 +111,7 @@ class _AlgorithmSelectionPageState extends State<AlgorithmSelectionPage>
                             );
                           },
                         ),
-                        AlgorithmOption(
+                        ButtonOptionWidget(
                           text: 'User Guided Image Colorization',
                           onSelected: () {
                             Navigator.push(
@@ -146,7 +127,7 @@ class _AlgorithmSelectionPageState extends State<AlgorithmSelectionPage>
                             );
                           },
                         ),
-                        AlgorithmOption(
+                        ButtonOptionWidget(
                           text: 'Image Color Filters',
                           onSelected: () {
                             Navigator.push(
@@ -163,7 +144,7 @@ class _AlgorithmSelectionPageState extends State<AlgorithmSelectionPage>
                             );
                           },
                         ),
-                        AlgorithmOption(
+                        ButtonOptionWidget(
                           text: 'Image Convolution Filters',
                           onSelected: () {
                             Navigator.push(
@@ -222,108 +203,5 @@ class _AlgorithmSelectionPageState extends State<AlgorithmSelectionPage>
     }
 
     setState(() {});
-  }
-
-  Widget _buildImage() {
-    return Builder(
-      builder: (context) => InteractiveViewer(
-        clipBehavior: Clip.none,
-        transformationController: _controller,
-        panEnabled: false,
-        minScale: _minScale,
-        maxScale: _maxScale,
-        onInteractionStart: (details) {
-          if (details.pointerCount < 2) return;
-
-          if (entry == null) {
-            _showOverlay(context);
-          }
-        },
-        onInteractionEnd: (details) {
-          if (details.pointerCount != 1) return;
-
-          _resetAnimation();
-        },
-        child: Image.memory(
-          !_isCropped ? _originalImageData! : _croppedImageData!,
-        ),
-      ),
-    );
-  }
-
-  void _resetAnimation() {
-    _animation = Matrix4Tween(
-      begin: _controller.value,
-      end: Matrix4.identity(),
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.linear,
-    ));
-
-    _animationController.forward(from: 0);
-  }
-
-  void _showOverlay(BuildContext context) {
-    final renderBox = context.findRenderObject()! as RenderBox;
-    final offset = renderBox.localToGlobal(Offset.zero);
-    final size = MediaQuery.of(context).size;
-
-    entry = OverlayEntry(
-      builder: (context) {
-        return Stack(
-          children: [
-            Positioned.fill(
-              child: Container(color: Colors.white),
-            ),
-            Positioned(
-              left: offset.dx,
-              top: offset.dy,
-              width: size.width,
-              child: _buildImage(),
-            ),
-          ],
-        );
-      },
-    );
-
-    final overlay = Overlay.of(context);
-    overlay.insert(entry!);
-  }
-
-  void _removeOverlay() {
-    entry?.remove();
-    entry = null;
-  }
-}
-
-class AlgorithmOption extends StatelessWidget {
-  const AlgorithmOption({
-    Key? key,
-    required this.text,
-    required this.onSelected,
-  }) : super(key: key);
-
-  final String text;
-  final Function() onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20.0),
-        color: Colors.black.withAlpha(25),
-      ),
-      height: 40,
-      margin: const EdgeInsets.only(left: 20),
-      child: TextButton(
-        onPressed: onSelected,
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: Colors.black,
-          ),
-        ),
-      ),
-    );
   }
 }

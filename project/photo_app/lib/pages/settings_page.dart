@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:photo_app/utils/shared_preferences.dart';
+
 import '../enums.dart';
 import '../widgets/custom_list_widget.dart';
 import '../widgets/settings/image_format_widget.dart';

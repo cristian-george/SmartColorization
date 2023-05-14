@@ -2,11 +2,13 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:photo_app/utils/filter_utils.dart';
+import 'package:photo_app/widgets/image_widget.dart';
 import 'package:photofilters/filters/filters.dart';
 import 'package:image/image.dart' as img;
 
 import '../widgets/image_filters/filtered_image_list_widget.dart';
 import '../widgets/image_filters/filtered_image_widget.dart';
+import '../widgets/save_image_widget.dart';
 
 class ImageFiltersPage extends StatefulWidget {
   const ImageFiltersPage({
@@ -28,6 +30,8 @@ class _ImageFiltersPageState extends State<ImageFiltersPage> {
   late img.Image _image;
   late Filter _filter;
 
+  late Widget _filteredImageListWidget;
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +39,18 @@ class _ImageFiltersPageState extends State<ImageFiltersPage> {
     FilterUtils.clearCache();
     _image = img.decodeImage(widget.imageData)!;
     _filter = widget.filters.first;
+
+    _filteredImageListWidget = FilteredImageListWidget(
+      filters: widget.filters,
+      image: _image,
+      onChangedFilter: (filter) {
+        if (_filter != filter) {
+          _filter = filter;
+
+          setState(() {});
+        }
+      },
+    );
   }
 
   @override
@@ -50,6 +66,13 @@ class _ImageFiltersPageState extends State<ImageFiltersPage> {
         iconTheme: const IconThemeData(color: Colors.black),
         backgroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          if (_filter != widget.filters.first)
+            SaveImageWidget(
+              imageData:
+                  Uint8List.fromList(FilterUtils.getCachedFilter(_filter)!),
+            ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.only(
@@ -60,46 +83,36 @@ class _ImageFiltersPageState extends State<ImageFiltersPage> {
         child: Column(
           children: [
             Expanded(
-              child: Stack(
-                children: [
-                  Center(
-                    child: FilteredImageWidget(
-                      filter: _filter,
-                      image: _image,
-                      successBuilder: (imageBytes) {
-                        Uint8List image = Uint8List.fromList(imageBytes);
-                        return Image.memory(image);
-                      },
-                      errorBuilder: () {
-                        return Container();
-                      },
-                      loadingBuilder: () {
-                        return const SizedBox(
-                          height: 400,
-                          child: Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+              child: Center(
+                child: FilteredImageWidget(
+                  filter: _filter,
+                  image: _image,
+                  successBuilder: (imageBytes) {
+                    final image = Uint8List.fromList(imageBytes);
+                    return ImageWidget(
+                      originalImageData: widget.imageData,
+                      processedImageData: image,
+                      isEyeShown: _filter != widget.filters.first,
+                    );
+                  },
+                  errorBuilder: () {
+                    return Container();
+                  },
+                  loadingBuilder: () {
+                    return const SizedBox(
+                      child: Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
             const Divider(
               height: 5,
               color: Colors.grey,
             ),
-            FilteredImageListWidget(
-              filters: widget.filters,
-              image: _image,
-              onChangedFilter: (filter) {
-                if (_filter != filter) {
-                  _filter = filter;
-                  setState(() {});
-                }
-              },
-            ),
+            _filteredImageListWidget,
           ],
         ),
       ),
