@@ -59,11 +59,56 @@ class _HomePageState extends State<HomePage>
       ),
       body: Padding(
         padding: const EdgeInsets.only(
+          top: 20,
           left: 10,
           right: 10,
         ),
         child: Column(
           children: [
+            Container(
+              margin: const EdgeInsets.only(bottom: 30.0),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20.0),
+                color: Colors.black.withAlpha(25),
+              ),
+              child: Center(
+                child: Column(
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.all(10.0),
+                      child: Text(
+                        'Unleash your creativity with this advanced image processing app! '
+                        'Colorize grayscale photos by manually or automatically using advanced machine learning techniques, '
+                        'and apply a range of convolutional and color filters. '
+                        'This isn\'t just an app, it\'s a canvas for your imagination.',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 18,
+                        ),
+                        textAlign: TextAlign.justify,
+                      ),
+                    ),
+                    Image.asset(
+                      'assets/divider.png',
+                      color: Colors.green,
+                      width: MediaQuery.of(context).size.width - 20,
+                      fit: BoxFit.cover,
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.all(10.0),
+                      child: Text(
+                        'Dive in and start creating now!',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 18,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             ScrollLoopAutoScroll(
               scrollDirection: Axis.horizontal,
               gap: 0,
@@ -72,13 +117,6 @@ class _HomePageState extends State<HomePage>
               enableScrollInput: false,
               child: Row(
                 children: _images,
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.only(top: 10, bottom: 20),
-              child: Divider(
-                height: 5,
-                color: Colors.grey,
               ),
             ),
           ],

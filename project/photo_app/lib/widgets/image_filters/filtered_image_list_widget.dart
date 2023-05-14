@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
+import 'package:photo_app/utils/filter_utils.dart';
 import 'package:photofilters/filters/filters.dart';
 
 import 'filtered_image_widget.dart';
@@ -30,7 +31,11 @@ class FilteredImageListWidget extends StatelessWidget {
           final filter = filters[index];
 
           return InkWell(
-            onTap: () => onChangedFilter(filter),
+            onTap: () {
+              if (FilterUtils.getCachedFilter(filter) != null) {
+                onChangedFilter(filter);
+              }
+            },
             child: Container(
               padding: const EdgeInsets.all(4),
               child: Column(

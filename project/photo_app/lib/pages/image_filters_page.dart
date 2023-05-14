@@ -89,9 +89,11 @@ class _ImageFiltersPageState extends State<ImageFiltersPage> {
                   image: _image,
                   successBuilder: (imageBytes) {
                     final image = Uint8List.fromList(imageBytes);
+
                     return ImageWidget(
                       originalImageData: widget.imageData,
-                      processedImageData: image,
+                      processedImageData:
+                          _filter != widget.filters.first ? image : null,
                       isEyeShown: _filter != widget.filters.first,
                     );
                   },

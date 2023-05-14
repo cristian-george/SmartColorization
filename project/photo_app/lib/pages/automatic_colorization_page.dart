@@ -20,8 +20,7 @@ class AutomaticColorizationPage extends StatefulWidget {
       _AutomaticColorizationPageState();
 }
 
-class _AutomaticColorizationPageState extends State<AutomaticColorizationPage>
-    with SingleTickerProviderStateMixin {
+class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
   Uint8List? _originalImageData;
   Uint8List? _processedImageData;
 

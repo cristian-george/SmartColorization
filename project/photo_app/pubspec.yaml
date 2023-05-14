@@ -22,6 +22,7 @@ dependencies:
 
   tflite_flutter: ^0.9.5
   flutter_color_models: ^1.3.3+2
+  flutter_colorpicker: ^1.0.3
 
   shared_preferences: ^2.1.0
 
@@ -51,3 +52,4 @@ flutter:
     - assets/home_page_photos/celebA_02.png
     - assets/home_page_photos/flowers_01.png
     - assets/home_page_photos/flowers_02.png
+    - assets/divider.png
