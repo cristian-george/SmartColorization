@@ -1,5 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:photo_app/database/photo_db_helper.dart';
+import 'package:photo_app/database/photo_model.dart';
 import 'package:photo_app/widgets/save_image_widget.dart';
 
 import '../services/colorization_service.dart';
@@ -135,5 +140,33 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
     _isGrayscale = false;
     _isEyeShown = true;
     setState(() {});
+
+    final date = DateTime.now();
+    final dir = await getApplicationDocumentsDirectory();
+
+    String originalImagePath = '${dir.path}/${date}_original.jpg';
+    File originalImageFile = await File(originalImagePath).create();
+    originalImageFile.writeAsBytesSync(_originalImageData!);
+
+    PhotoModel original = PhotoModel(
+      id: 1,
+      timestamp: date.millisecondsSinceEpoch,
+      path: originalImagePath,
+      category: PhotoCategory.automaticColorized,
+    );
+
+    String processedImagePath = '${dir.path}/${date}_processed.jpg';
+    File processedImageFile = await File(processedImagePath).create();
+    processedImageFile.writeAsBytesSync(_processedImageData!);
+
+    PhotoModel edited = PhotoModel(
+      id: 1,
+      timestamp: date.millisecondsSinceEpoch,
+      path: processedImagePath,
+      category: PhotoCategory.automaticColorized,
+    );
+
+    PhotoDbHelper.instance.createPhoto(original);
+    PhotoDbHelper.instance.createPhoto(edited);
   }
 }
