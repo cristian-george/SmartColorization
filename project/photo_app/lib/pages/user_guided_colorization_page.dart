@@ -1,12 +1,15 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_color_models/flutter_color_models.dart';
+import 'package:image/image.dart' as img;
 
 import '../services/colorization_service.dart';
 import '../widgets/button_option_widget.dart';
+import '../widgets/color_picker_popup.dart';
 import '../widgets/image_widget.dart';
-import '../widgets/settings/dataset_list_widget.dart';
 
 class UserGuidedColorizationPage extends StatefulWidget {
   const UserGuidedColorizationPage({Key? key, required this.imageData})
@@ -26,6 +29,9 @@ class _UserGuidedColorizationPageState
 
   bool _isGrayscale = false;
   bool _isEyeShown = false;
+
+  final List<Map<Point, Color>> _pickedColors = [];
+  Point<int> _currentCoordinates = const Point(0, 0);
 
   @override
   void initState() {
@@ -64,6 +70,32 @@ class _UserGuidedColorizationPageState
         ),
         child: Column(
           children: [
+            Container(
+              alignment: Alignment.center,
+              height: 100,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _pickedColors.length,
+                itemBuilder: (BuildContext context, int index) {
+                  return Padding(
+                    padding: const EdgeInsets.all(5.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: _pickedColors[index].values.first,
+                          radius: 30,
+                        ),
+                        Text(
+                          '(${_pickedColors[index].keys.first.x}, '
+                          '${_pickedColors[index].keys.first.y})',
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
             Expanded(
               child: Center(
                 child: LayoutBuilder(
@@ -99,7 +131,7 @@ class _UserGuidedColorizationPageState
                         int x = (localPosition.dx / scaleX).round();
                         int y = (localPosition.dy / scaleY).round();
 
-                        print('Image coordinates: ($x, $y)');
+                        _currentCoordinates = Point(x, y);
                       },
                       child: ImageWidget(
                         originalImageData: _originalImageData,
@@ -139,11 +171,20 @@ class _UserGuidedColorizationPageState
   }
 
   void _colorPicker() {
+    final color = _getColorPixelAt(_currentCoordinates);
+
     showGeneralDialog(
         context: context,
         pageBuilder: (BuildContext context, Animation<double> animation,
                 Animation<double> secondaryAnimation) =>
-            const DatasetPopup(title: "Datasets"));
+            ColorPickerPopup(
+              title: "Pick a Color",
+              initialColor: color,
+              onPickedColor: (Color color) {
+                _pickedColors.add({_currentCoordinates: color});
+                setState(() {});
+              },
+            ));
   }
 
   Future<Size> _getImageSize(Uint8List imageData) async {
@@ -153,6 +194,22 @@ class _UserGuidedColorizationPageState
       frameInfo.image.width.toDouble(),
       frameInfo.image.height.toDouble(),
     );
+  }
+
+  Color _getColorPixelAt(Point<int> coordinates) {
+    img.Image image = img.decodeImage(_originalImageData!)!;
+    img.Color pixel = image.getPixel(coordinates.x, coordinates.y);
+
+    int r = pixel.r.toInt();
+    int g = pixel.g.toInt();
+    int b = pixel.b.toInt();
+    LabColor labColor = RgbColor(r, g, b).toLabColor();
+
+    final lightness = labColor.lightness;
+    print('Lightness: $lightness');
+
+    RgbColor rgbColor = LabColor(lightness, 0, 0).toRgbColor();
+    return Color.fromARGB(255, rgbColor.red, rgbColor.green, rgbColor.blue);
   }
 
   void _convertToGrayscale() {
