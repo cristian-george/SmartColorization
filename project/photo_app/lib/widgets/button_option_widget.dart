@@ -15,7 +15,15 @@ class ButtonOptionWidget extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20.0),
-        color: Colors.black.withAlpha(25),
+        color: Colors.black.withAlpha(50),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.blueAccent,
+            Colors.greenAccent,
+          ],
+        ),
       ),
       height: 40,
       margin: const EdgeInsets.only(left: 20),

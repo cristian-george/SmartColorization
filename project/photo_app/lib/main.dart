@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:photo_app/pages/home_page.dart';
-import 'package:photo_app/utils/shared_preferences.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import 'utils/shared_preferences.dart';
+import 'database/database_connection.dart';
+import 'pages/home_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  sharedPreferences = await SharedPreferences.getInstance();
-  initSharedPreferences();
+  DatabaseConnection.initialize();
+  sharedPreferences = await SharedPrefs.initialize();
 
   runApp(const PhotoApp());
 }
@@ -17,10 +18,27 @@ class PhotoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    _precacheImages(context);
+
     return const MaterialApp(
       title: 'Photo App',
       home: HomePage(),
       debugShowCheckedModeBanner: false,
     );
+  }
+
+  _precacheImages(context) async {
+    await precacheImage(
+        const AssetImage("assets/home_page_photos/places365_01.png"), context);
+    await precacheImage(
+        const AssetImage("assets/home_page_photos/places365_02.png"), context);
+    await precacheImage(
+        const AssetImage("assets/home_page_photos/celebA_01.png"), context);
+    await precacheImage(
+        const AssetImage("assets/home_page_photos/celebA_02.png"), context);
+    await precacheImage(
+        const AssetImage("assets/home_page_photos/flowers_01.png"), context);
+    await precacheImage(
+        const AssetImage("assets/home_page_photos/flowers_02.png"), context);
   }
 }

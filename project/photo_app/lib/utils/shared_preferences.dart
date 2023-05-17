@@ -2,18 +2,26 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../enums.dart';
 
-late SharedPreferences sharedPreferences;
+class SharedPrefs {
+  static late SharedPreferences _preferences;
 
-void initSharedPreferences() {
-  if (!sharedPreferences.containsKey('theme')) {
-    sharedPreferences.setInt('theme', Themes.automatic.index);
-  }
+  static Future<SharedPreferences> initialize() async {
+    _preferences = await SharedPreferences.getInstance();
 
-  if (!sharedPreferences.containsKey('dataset')) {
-    sharedPreferences.setInt('dataset', Datasets.places365.index);
-  }
+    if (!_preferences.containsKey('theme')) {
+      _preferences.setInt('theme', Themes.automatic.index);
+    }
 
-  if (!sharedPreferences.containsKey('format')) {
-    sharedPreferences.setInt('format', ImageFormats.png.index);
+    if (!_preferences.containsKey('dataset')) {
+      _preferences.setInt('dataset', Datasets.places365.index);
+    }
+
+    if (!_preferences.containsKey('format')) {
+      _preferences.setInt('format', ImageFormats.png.index);
+    }
+
+    return _preferences;
   }
 }
+
+late SharedPreferences sharedPreferences;

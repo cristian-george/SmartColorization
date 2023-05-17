@@ -6,7 +6,6 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:photo_app/pages/user_guided_colorization_page.dart';
 import 'package:photo_app/utils/convolution_filters.dart';
-import 'package:scroll_loop_auto_scroll/scroll_loop_auto_scroll.dart';
 
 import '../utils/color_filters.dart';
 import '../widgets/button_option_widget.dart';
@@ -87,12 +86,8 @@ class _AlgorithmSelectionPageState extends State<AlgorithmSelectionPage>
                 ),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 20),
-                  child: ScrollLoopAutoScroll(
+                  child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    gap: 0,
-                    duplicateChild: 10,
-                    delay: const Duration(seconds: 0),
-                    duration: const Duration(minutes: 2),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -161,6 +156,7 @@ class _AlgorithmSelectionPageState extends State<AlgorithmSelectionPage>
                             );
                           },
                         ),
+                        const SizedBox(width: 20),
                       ],
                     ),
                   ),

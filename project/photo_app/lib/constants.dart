@@ -7,3 +7,8 @@ List<String> models = [
   modelCelebA,
   modelFlowers,
 ];
+
+List<String> description = [
+  'Unleash your creativity with this innovative image processing implementation! Colorize grayscale photos by manually or automatically using advanced machine learning techniques, and apply a range of convolutional and color filters. This isn\'t just a simple application, it\'s a digital canvas for your imagination. ',
+  'Dive in and start creating now!',
+];
