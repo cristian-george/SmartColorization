@@ -14,9 +14,9 @@ const List<AssetImage> imageAssets = [
   AssetImage('assets/home_page_photos/flowers_02.png'),
 ];
 
-const String modelPlaces365 = 'colorization_model_places365.tflite';
-const String modelCelebA = 'colorization_model_celebA.tflite';
-const String modelFlowers = 'colorization_model_flowers.tflite';
+const String modelPlaces365 = 'colorization_models/places365.tflite';
+const String modelCelebA = 'colorization_models/celebA.tflite';
+const String modelFlowers = 'colorization_models/flowers.tflite';
 
 const List<String> models = [
   modelPlaces365,

@@ -1,7 +1,7 @@
 import numpy as np
 from keras.preprocessing.image import ImageDataGenerator
 
-from utils import rgb2lab_split_image
+from colorization_utils import rgb2lab_split_image
 
 
 class ImageGenerator:
