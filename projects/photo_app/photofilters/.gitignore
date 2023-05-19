@@ -236,5 +236,4 @@ fabric.properties
 
 # End of https://www.toptal.com/developers/gitignore/api/dart,flutter,vscode,androidstudio
 
-!/res/
-!/doc/api/
+doc/api
