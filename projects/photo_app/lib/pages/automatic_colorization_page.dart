@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_app/database/photo_db_helper.dart';
 import 'package:photo_app/database/photo_model.dart';
-import 'package:photo_app/services/photo_extension_service.dart';
+import 'package:photo_app/utils/extensions/save_photo_extension.dart';
 import 'package:photo_app/widgets/save_image_widget.dart';
 
 import '../services/colorization_service.dart';
@@ -142,12 +142,8 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
   }
 
   void _colorizeImage() async {
-    _processedImageData = await ColorizationService.colorizeImage(
-      _originalImageData!,
-      (status) {
-        print(status);
-      },
-    );
+    _processedImageData =
+        await ColorizationService.colorizeImage(_originalImageData!);
 
     _isGrayscale = false;
     _isEyeShown = true;

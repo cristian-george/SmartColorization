@@ -3,8 +3,8 @@ import 'dart:typed_data';
 
 import 'package:path_provider/path_provider.dart';
 
-import '../database/photo_db_helper.dart';
-import '../database/photo_model.dart';
+import '../../database/photo_db_helper.dart';
+import '../../database/photo_model.dart';
 
 extension SavePhoto on PhotoDbHelper {
   savePhoto(

@@ -152,60 +152,63 @@ class _EditedImagesHistoryPageState extends State<EditedImagesHistoryPage> {
                               isEyeShown: true),
                         ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 10),
-                  child: Divider(
-                    height: 5,
-                    color: Colors.grey,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ButtonOptionWidget(
-                          text: 'All',
-                          onSelected: () {
-                            _currentCategory = null;
-                            setState(() {});
-                          },
-                        ),
-                        ButtonOptionWidget(
-                          text: 'Automatic Image Colorization',
-                          onSelected: () {
-                            _currentCategory = PhotoCategory.automaticColorized;
-                            setState(() {});
-                          },
-                        ),
-                        ButtonOptionWidget(
-                          text: 'User Guided Image Colorization',
-                          onSelected: () {
-                            _currentCategory = PhotoCategory.guidedColorized;
-                            setState(() {});
-                          },
-                        ),
-                        ButtonOptionWidget(
-                          text: 'Image Color Filters',
-                          onSelected: () {
-                            _currentCategory = PhotoCategory.colorFiltered;
-                            setState(() {});
-                          },
-                        ),
-                        ButtonOptionWidget(
-                          text: 'Image Convolution Filters',
-                          onSelected: () {
-                            _currentCategory = PhotoCategory.convFiltered;
-                            setState(() {});
-                          },
-                        ),
-                        const SizedBox(width: 20),
-                      ],
+                if (!_expandImage)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 10),
+                    child: Divider(
+                      height: 5,
+                      color: Colors.grey,
                     ),
                   ),
-                ),
+                if (!_expandImage)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          ButtonOptionWidget(
+                            text: 'All',
+                            onSelected: () {
+                              _currentCategory = null;
+                              setState(() {});
+                            },
+                          ),
+                          ButtonOptionWidget(
+                            text: 'Automatic Image Colorization',
+                            onSelected: () {
+                              _currentCategory =
+                                  PhotoCategory.automaticColorized;
+                              setState(() {});
+                            },
+                          ),
+                          ButtonOptionWidget(
+                            text: 'User Guided Image Colorization',
+                            onSelected: () {
+                              _currentCategory = PhotoCategory.guidedColorized;
+                              setState(() {});
+                            },
+                          ),
+                          ButtonOptionWidget(
+                            text: 'Image Color Filters',
+                            onSelected: () {
+                              _currentCategory = PhotoCategory.colorFiltered;
+                              setState(() {});
+                            },
+                          ),
+                          ButtonOptionWidget(
+                            text: 'Image Convolution Filters',
+                            onSelected: () {
+                              _currentCategory = PhotoCategory.convFiltered;
+                              setState(() {});
+                            },
+                          ),
+                          const SizedBox(width: 20),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
           ],

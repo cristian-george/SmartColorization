@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:photo_app/database/photo_model.dart';
-import 'package:photo_app/services/photo_extension_service.dart';
+import 'package:photo_app/utils/extensions/save_photo_extension.dart';
 import 'package:photo_app/utils/filter_utils.dart';
 import 'package:photo_app/widgets/image_widget.dart';
 import 'package:photofilters/filters/filters.dart';

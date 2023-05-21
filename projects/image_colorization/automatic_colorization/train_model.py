@@ -14,8 +14,8 @@ model.summary()
 # Prepare training and validation data
 batch_size = 32
 
-train_dir = '../datasets/' + dataset_name
-val_dir = '../datasets/' + dataset_name
+train_dir = 'images/datasets/' + dataset_name
+val_dir = 'images/datasets/' + dataset_name
 
 train_data = ImageGenerator(train_dir, batch_size=batch_size, classes=['train'], augment=True)
 valid_data = ImageGenerator(val_dir, batch_size=batch_size, classes=['val'])

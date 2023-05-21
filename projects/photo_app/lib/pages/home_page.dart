@@ -80,7 +80,7 @@ class _HomePageState extends State<HomePage>
                       Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Text(
-                          description.first,
+                          applicationDescription.first,
                           style: const TextStyle(
                             color: Colors.black,
                             fontSize: 16,
@@ -91,7 +91,7 @@ class _HomePageState extends State<HomePage>
                       Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Text(
-                          description.last,
+                          applicationDescription.last,
                           style: const TextStyle(
                             color: Colors.black,
                             fontSize: 16,

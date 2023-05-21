@@ -71,7 +71,7 @@ class SIGGRAPHGenerator(nn.Module):
         model7 += [nn.ReLU(True), ]
         model7 += [norm_layer(512), ]
 
-        # Conv7
+        # Conv8
         model8up = [nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2, padding=1, bias=use_bias)]
         model3short8 = [nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1, bias=use_bias), ]
 
@@ -142,11 +142,8 @@ class SIGGRAPHGenerator(nn.Module):
         mask_B = mask_B[None, :, :, :]
         mask_B = mask_B - maskcent
 
-        # input_A = torch.Tensor(input_A, dtype=torch.float32).to(self.cuda0)[None, :, :, :]
         input_A = torch.Tensor(input_A)
         input_A = input_A.to(self.cuda0)
-        # input_B = torch.Tensor(input_B,dtype=torch.float32).to(self.cuda0)[None, :, :, :]
-        # mask_B = torch.Tensor(mask_B,dtype=torch.float32).to(self.cuda0)[None, :, :, :]
         conv1_2 = self.model1(torch.cat((input_A / 100., input_B / 110., mask_B), dim=1))
         conv2_2 = self.model2(conv1_2[:, :, ::2, ::2])
         conv3_3 = self.model3(conv2_2[:, :, ::2, ::2])

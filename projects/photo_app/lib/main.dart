@@ -21,9 +21,10 @@ class PhotoApp extends StatelessWidget {
   Widget build(BuildContext context) {
     _precacheImages(context);
 
-    return const MaterialApp(
+    return MaterialApp(
       title: 'Photo App',
-      home: HomePage(),
+      home: const HomePage(),
+      scrollBehavior: const ScrollBehavior().copyWith(overscroll: false),
       debugShowCheckedModeBanner: false,
     );
   }

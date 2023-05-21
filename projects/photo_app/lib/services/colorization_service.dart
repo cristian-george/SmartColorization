@@ -10,15 +10,12 @@ enum ColorizationStatus { initialized, loaded, applied, finished }
 class ColorizationService {
   static late String model;
 
-  static Future<Uint8List> colorizeImage(
-      Uint8List imageData, Function(ColorizationStatus) callback) async {
+  static Future<Uint8List> colorizeImage(Uint8List imageData) async {
     // Initialize the model
     final index = sharedPreferences.getInt('dataset');
     if (index != null) {
       model = models[index];
     }
-
-    callback(ColorizationStatus.initialized);
 
     // Load the model
     final options = InterpreterOptions()
@@ -31,8 +28,6 @@ class ColorizationService {
     );
 
     interpreter.invoke();
-
-    callback(ColorizationStatus.loaded);
 
     // Preprocessing
     img.Image inputImage = img.decodeImage(imageData)!;
@@ -62,8 +57,6 @@ class ColorizationService {
     // Run the model
     interpreter.run(inputTensorData, outputTensorData);
     interpreter.close();
-
-    callback(ColorizationStatus.applied);
 
     // Postprocessing
     List<LabColor> ab = outputTensorData
@@ -117,8 +110,6 @@ class ColorizationService {
         newRgb.setPixelRgb(x, y, rgbColor.red, rgbColor.green, rgbColor.blue);
       }
     }
-
-    callback(ColorizationStatus.finished);
 
     return img.encodeJpg(newRgb);
   }
