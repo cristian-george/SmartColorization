@@ -184,6 +184,8 @@ fabric.properties
 # idea folder, uncomment if you don't need it
 .idea
 
+images/datasets
+images/figures
 images/inputs
 images/results
 images/visualkeras
