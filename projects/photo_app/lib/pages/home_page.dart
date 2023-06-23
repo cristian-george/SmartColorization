@@ -45,7 +45,7 @@ class _HomePageState extends State<HomePage>
       appBar: AppBar(
         centerTitle: true,
         title: const Text(
-          'Photo App',
+          'Photo Editor',
           style: TextStyle(color: Colors.black),
         ),
         backgroundColor: Colors.white,

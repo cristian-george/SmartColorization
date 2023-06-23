@@ -14,6 +14,7 @@ import '../database/photo_db_helper.dart';
 import '../services/colorization_service.dart';
 import '../widgets/color_picker_popup.dart';
 import '../widgets/image_widget.dart';
+import '../widgets/save_image_widget.dart';
 
 class UserGuidedColorizationPage extends StatefulWidget {
   const UserGuidedColorizationPage({
@@ -66,7 +67,7 @@ class _UserGuidedColorizationPageState
       appBar: AppBar(
         centerTitle: true,
         title: const Text(
-          'Guided Image Colorization',
+          'Guided Colorization',
           style: TextStyle(color: Colors.black),
         ),
         leading: IconButton(
@@ -85,6 +86,10 @@ class _UserGuidedColorizationPageState
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
+          if (_processedImageData != null)
+            SaveImageWidget(
+              imageData: _processedImageData!,
+            ),
           IconButton(
             onPressed: _colorPicker,
             tooltip: 'Color picker',
@@ -109,22 +114,29 @@ class _UserGuidedColorizationPageState
                       scrollDirection: Axis.horizontal,
                       itemCount: _pickedColors.length,
                       itemBuilder: (BuildContext context, int index) {
-                        return Padding(
-                          padding: const EdgeInsets.all(5.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              CircleAvatar(
-                                backgroundColor:
-                                    _pickedColors[index].values.first,
-                                radius: 25,
-                              ),
-                              Text(
-                                '(${_pickedColors[index].keys.first.x}, '
-                                '${_pickedColors[index].keys.first.y})',
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                            ],
+                        return GestureDetector(
+                          onLongPressUp: () {
+                            _pickedColors.removeAt(index);
+                            setState(() {});
+                            _colorizeImage();
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(5.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor:
+                                      _pickedColors[index].values.first,
+                                  radius: 25,
+                                ),
+                                Text(
+                                  '(${_pickedColors[index].keys.first.x}, '
+                                  '${_pickedColors[index].keys.first.y})',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       },
@@ -228,7 +240,11 @@ class _UserGuidedColorizationPageState
   }
 
   void _colorizeImage() async {
-    if (_pickedColors.isEmpty) return;
+    if (_pickedColors.isEmpty) {
+      _processedImageData = null;
+      _isEyeShown = false;
+      return;
+    }
 
     List<List<int>> coordinates = [];
     List<List<double>> colors = [];
@@ -251,7 +267,7 @@ class _UserGuidedColorizationPageState
     };
 
     var response = await http.post(
-      Uri.parse('http://192.168.0.141:5000/guided_colorization'),
+      Uri.parse('http://10.146.1.114:5000/guided_colorization'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(map),
     );

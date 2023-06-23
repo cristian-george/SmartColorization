@@ -87,12 +87,6 @@ class Mean5x5Filter extends ImageFilter {
   }
 }
 
-class HighPassFilter extends ImageFilter {
-  HighPassFilter() : super(name: "HighPass") {
-    subFilters.add(ConvolutionSubFilter.fromKernel(highPass3x3Kernel));
-  }
-}
-
 List<Filter> convolutionFilters = [
   IdentityFilter(),
   EmbossFilter(),
@@ -108,5 +102,4 @@ List<Filter> convolutionFilters = [
   LowPass5x5Filter(),
   Mean3x3Filter(),
   Mean5x5Filter(),
-  HighPassFilter(),
 ];

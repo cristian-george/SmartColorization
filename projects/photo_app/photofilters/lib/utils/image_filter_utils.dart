@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:photofilters/utils/utils.dart';
 
 int clampPixel(int x) => x.clamp(0, 255);
+
 void saturation(Uint8List bytes, num saturation) {
   saturation = (saturation < -1) ? -1 : saturation;
   for (int i = 0; i < bytes.length; i += 4) {

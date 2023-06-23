@@ -19,8 +19,8 @@ class _DatasetPopupState extends State<DatasetPopup> {
   void initState() {
     super.initState();
 
-    final idx = sharedPreferences.getInt('dataset')!;
-    _selectedDataset = Datasets.values[idx];
+    final dataset = sharedPreferences.getInt('dataset')!;
+    _selectedDataset = Datasets.values[dataset];
   }
 
   @override
@@ -47,7 +47,6 @@ class _DatasetPopupState extends State<DatasetPopup> {
       actions: [
         TextButton(
           onPressed: () {
-            //getIt<ThemeModeSelector>().setThemeMode(_selectedTheme);
             sharedPreferences.setInt('dataset', _selectedDataset.index);
             Navigator.of(context).pop();
           },
@@ -72,6 +71,12 @@ class DatasetListWidget extends StatefulWidget {
 class _DatasetListWidgetState extends State<DatasetListWidget> {
   late Datasets _selectedDataset;
 
+  final List _datasetList = [
+    'landscapes and indoor scenes',
+    'portraits',
+    'vegetation',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -87,7 +92,7 @@ class _DatasetListWidgetState extends State<DatasetListWidget> {
       itemBuilder: (context, index) {
         return ListTile(
           title: Text(
-            Datasets.values[index].toString().split('.')[1],
+            _datasetList[index],
             style: TextStyle(color: Colors.grey[800] as Color),
           ),
           trailing: _selectedDataset == Datasets.values[index]

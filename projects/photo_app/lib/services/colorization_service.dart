@@ -5,30 +5,25 @@ import 'package:photo_app/utils/shared_preferences.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:flutter_color_models/flutter_color_models.dart';
 
-enum ColorizationStatus { initialized, loaded, applied, finished }
-
 class ColorizationService {
-  static late String model;
+  static late Interpreter interpreter;
 
-  static Future<Uint8List> colorizeImage(Uint8List imageData) async {
-    // Initialize the model
+  static final options = InterpreterOptions()
+    ..useNnApiForAndroid = true
+    ..threads = 8;
+
+  static setInterpreter() async {
+    late String model;
     final index = sharedPreferences.getInt('dataset');
     if (index != null) {
       model = models[index];
     }
 
-    // Load the model
-    final options = InterpreterOptions()
-      ..useNnApiForAndroid = true
-      ..threads = 8;
-
-    final interpreter = await Interpreter.fromAsset(
-      model,
-      options: options,
-    );
-
+    interpreter = await Interpreter.fromAsset(model, options: options);
     interpreter.invoke();
+  }
 
+  static Uint8List colorizeImage(Uint8List imageData) {
     // Preprocessing
     img.Image inputImage = img.decodeImage(imageData)!;
 
@@ -50,44 +45,33 @@ class ColorizationService {
     List<double> lum =
         labImage.map((pixel) => pixel.lightness.toDouble()).toList();
 
-    var inputTensorData = lum.reshape([1, 224, 224, 1]);
-    var outputTensorData =
+    var chrominance =
         List.filled(1 * 224 * 224 * 2, 0.0).reshape([1, 224, 224, 2]);
 
     // Run the model
-    interpreter.run(inputTensorData, outputTensorData);
+    interpreter.run(lum.reshape([1, 224, 224, 1]), chrominance);
     interpreter.close();
 
     // Postprocessing
-    List<LabColor> ab = outputTensorData
-        .reshape([224 * 224, 2])
-        .map((e) => LabColor(0.0, e[0] as double, e[1] as double))
-        .toList();
+    var i = 0;
 
-    List<RgbColor> outputRgbColors = [];
-    for (int y = 0; y < 224; ++y) {
-      for (int x = 0; x < 224; ++x) {
-        double l = lum[y * 224 + x];
-        double a = ab[y * 224 + x].a * 128;
-        if (a <= -128) a = -128;
-        if (a >= 127) a = 127;
-        double b = ab[y * 224 + x].b * 128;
-        if (b <= -128) b = -128;
-        if (b >= 127) b = 127;
-        outputRgbColors.add(RgbColor.from(LabColor(l, a, b)));
-      }
-    }
+    List<LabColor> outputLabColors =
+        chrominance.reshape([224 * 224, 2]).map((pixel) {
+      double l = lum[i++];
+      double a = pixel[0] * 128;
+      double b = pixel[1] * 128;
+
+      if (a <= -128) a = -128;
+      if (a >= 127) a = 127;
+
+      if (b <= -128) b = -128;
+      if (b >= 127) b = 127;
+
+      return LabColor(l, a, b);
+    }).toList();
 
     // Convert LAB colors back to RGB and create a colorized image
-    img.Image resultImage = img.Image(width: 224, height: 224);
-
-    for (int y = 0; y < 224; y++) {
-      for (int x = 0; x < 224; x++) {
-        RgbColor rgbColor = outputRgbColors[y * 224 + x];
-        resultImage.setPixelRgb(
-            x, y, rgbColor.red, rgbColor.green, rgbColor.blue);
-      }
-    }
+    img.Image resultImage = _labToRgb(outputLabColors, 224, 224);
 
     img.Image result = img.copyResize(
       resultImage,

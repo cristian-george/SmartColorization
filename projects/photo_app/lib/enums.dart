@@ -1,9 +1,3 @@
-enum Themes {
-  light,
-  dark,
-  automatic,
-}
-
 enum Datasets {
   places365,
   celebA,

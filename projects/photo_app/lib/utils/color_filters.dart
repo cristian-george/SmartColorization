@@ -24,13 +24,13 @@ class ClarendonFilter extends ColorFilter {
 }
 
 class AddictiveRedFilter extends ColorFilter {
-  AddictiveRedFilter() : super(name: "AddictiveRed") {
+  AddictiveRedFilter() : super(name: "Addictive Red") {
     subFilters.add(AddictiveColorSubFilter(50, 0, 0));
   }
 }
 
 class AddictiveBlueFilter extends ColorFilter {
-  AddictiveBlueFilter() : super(name: "AddictiveBlue") {
+  AddictiveBlueFilter() : super(name: "Addictive Blue") {
     subFilters.add(AddictiveColorSubFilter(0, 0, 50));
   }
 }

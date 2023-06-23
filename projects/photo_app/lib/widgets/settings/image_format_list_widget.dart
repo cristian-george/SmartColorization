@@ -47,7 +47,6 @@ class _ImageFormatPopupState extends State<ImageFormatPopup> {
       actions: [
         TextButton(
           onPressed: () {
-            //getIt<ThemeModeSelector>().setThemeMode(_selectedTheme);
             sharedPreferences.setInt('format', _selectedImageFormat.index);
             Navigator.of(context).pop();
           },

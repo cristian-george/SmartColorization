@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_app/database/photo_db_helper.dart';
@@ -6,6 +9,7 @@ import 'package:photo_app/utils/extensions/save_photo_extension.dart';
 import 'package:photo_app/widgets/save_image_widget.dart';
 
 import '../services/colorization_service.dart';
+import '../utils/shared_preferences.dart';
 import '../widgets/button_option_widget.dart';
 import '../widgets/image_widget.dart';
 import '../widgets/settings/dataset_list_widget.dart';
@@ -31,6 +35,7 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
 
   bool _isGrayscale = false;
   bool _isEyeShown = false;
+  bool _isColoring = false;
 
   @override
   void initState() {
@@ -38,6 +43,8 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
 
     _originalImageData = widget.imageData;
     _convertToGrayscale();
+
+    ColorizationService.setInterpreter();
   }
 
   @override
@@ -47,7 +54,7 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
       appBar: AppBar(
         centerTitle: true,
         title: const Text(
-          'Image Colorization',
+          'Automatic Colorization',
           style: TextStyle(color: Colors.black),
         ),
         leading: IconButton(
@@ -106,11 +113,36 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  if (_isGrayscale)
+                  if (_isGrayscale && !_isColoring)
                     ButtonOptionWidget(
                       text: 'Colorize image',
-                      onSelected: _colorizeImage,
+                      onSelected: () {
+                        if (_isColoring == false) {
+                          _isColoring = true;
+                          setState(() {});
+                        }
+                      },
                     ),
+                  if (_isColoring)
+                    FutureBuilder(
+                      future: _colorizeImageOnDevice(_originalImageData!),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          return const CircularProgressIndicator();
+                        } else {
+                          {
+                            setState(() {
+                              _isGrayscale = false;
+                              _isEyeShown = true;
+                              _isColoring = false;
+                              _processedImageData = snapshot.data;
+                            });
+
+                            return Container();
+                          }
+                        }
+                      },
+                    )
                 ],
               ),
             ),
@@ -125,7 +157,9 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
         context: context,
         pageBuilder: (BuildContext context, Animation<double> animation,
                 Animation<double> secondaryAnimation) =>
-            const DatasetPopup(title: "Datasets"));
+            const DatasetPopup(title: "Colorize...")).then((value) {
+      ColorizationService.setInterpreter();
+    });
   }
 
   void _convertToGrayscale() {
@@ -141,12 +175,39 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
     setState(() {});
   }
 
-  void _colorizeImage() async {
+  void _colorizeImageLocal() {
     _processedImageData =
-        await ColorizationService.colorizeImage(_originalImageData!);
+        ColorizationService.colorizeImage(_originalImageData!);
 
-    _isGrayscale = false;
-    _isEyeShown = true;
-    setState(() {});
+    setState(() {
+      _isGrayscale = false;
+      _isEyeShown = true;
+    });
+  }
+
+  Future<Uint8List> _colorizeImageOnDevice(Uint8List image) {
+    return compute(
+      ColorizationService.colorizeImage,
+      image,
+    );
+  }
+
+  void _colorizeImageOnline() async {
+    final map = {
+      'image': base64Encode(_originalImageData!),
+      'dataset': sharedPreferences.getInt('dataset')!,
+    };
+
+    var response = await http.post(
+      Uri.parse('http://10.146.1.114:5000/automatic_colorization'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(map),
+    );
+
+    setState(() {
+      _processedImageData = response.bodyBytes;
+      _isGrayscale = false;
+      _isEyeShown = true;
+    });
   }
 }

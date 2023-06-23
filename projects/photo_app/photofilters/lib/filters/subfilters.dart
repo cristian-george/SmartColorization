@@ -11,6 +11,7 @@ import 'package:photofilters/utils/color_filter_utils.dart'
 ///The [ContrastSubFilter] class is a SubFilter class to apply [contrast] to an image.
 class ContrastSubFilter extends ColorSubFilter with ImageSubFilter {
   final num contrast;
+
   ContrastSubFilter(this.contrast);
 
   ///Apply the [ContrastSubFilter] to an Image.
@@ -26,6 +27,7 @@ class ContrastSubFilter extends ColorSubFilter with ImageSubFilter {
 ///The [BrightnessSubFilter] class is a SubFilter class to apply [brightness] to an image.
 class BrightnessSubFilter extends ColorSubFilter with ImageSubFilter {
   final num brightness;
+
   BrightnessSubFilter(this.brightness);
 
   ///Apply the [BrightnessSubFilter] to an Image.
@@ -42,6 +44,7 @@ class BrightnessSubFilter extends ColorSubFilter with ImageSubFilter {
 ///The [SaturationSubFilter] class is a SubFilter class to apply [saturation] to an image.
 class SaturationSubFilter extends ColorSubFilter with ImageSubFilter {
   final num saturation;
+
   SaturationSubFilter(this.saturation);
 
   ///Apply the [SaturationSubFilter] to an Image.
@@ -58,6 +61,7 @@ class SaturationSubFilter extends ColorSubFilter with ImageSubFilter {
 ///The [SepiaSubFilter] class is a SubFilter class to apply [sepia] to an image.
 class SepiaSubFilter extends ColorSubFilter with ImageSubFilter {
   final num sepia;
+
   SepiaSubFilter(this.sepia);
 
   ///Apply the [SepiaSubFilter] to an Image.
@@ -97,6 +101,7 @@ class InvertSubFilter extends ColorSubFilter with ImageSubFilter {
 ///The [HueRotationSubFilter] class is a SubFilter class to rotate hue in [degrees].
 class HueRotationSubFilter extends ColorSubFilter with ImageSubFilter {
   final int degrees;
+
   HueRotationSubFilter(this.degrees);
 
   ///Apply the [HueRotationSubFilter] to an Image.
@@ -115,6 +120,7 @@ class AddictiveColorSubFilter extends ColorSubFilter with ImageSubFilter {
   final int red;
   final int green;
   final int blue;
+
   AddictiveColorSubFilter(this.red, this.green, this.blue);
 
   ///Apply the [AddictiveColorSubFilter] to an Image.
@@ -133,6 +139,7 @@ class RGBScaleSubFilter extends ColorSubFilter with ImageSubFilter {
   final num red;
   final num green;
   final num blue;
+
   RGBScaleSubFilter(this.red, this.green, this.blue);
 
   ///Apply the [RGBScaleSubFilter] to an Image.
@@ -152,6 +159,7 @@ class RGBOverlaySubFilter extends ColorSubFilter with ImageSubFilter {
   final num green;
   final num blue;
   final num scale;
+
   RGBOverlaySubFilter(this.red, this.green, this.blue, this.scale);
 
   ///Apply the [RGBOverlaySubFilter] to an Image.
@@ -177,9 +185,8 @@ class ConvolutionSubFilter implements ImageSubFilter {
 
   ///Apply the [ConvolutionSubFilter] to an Image.
   @override
-  void apply(Uint8List pixels, int width, int height) =>
-      image_filter_utils.convolute(pixels, width, height,
-          this._normalizeKernel(this.weights), this.bias);
+  void apply(Uint8List pixels, int width, int height) => image_filter_utils
+      .convolute(pixels, width, height, _normalizeKernel(weights), bias);
 
   List<num> _normalizeKernel(List<num> kernel) {
     num sum = 0;

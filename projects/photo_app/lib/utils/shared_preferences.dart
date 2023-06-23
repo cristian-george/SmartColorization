@@ -8,10 +8,6 @@ class SharedPrefs {
   static Future<SharedPreferences> initialize() async {
     _preferences = await SharedPreferences.getInstance();
 
-    if (!_preferences.containsKey('theme')) {
-      _preferences.setInt('theme', Themes.automatic.index);
-    }
-
     if (!_preferences.containsKey('dataset')) {
       _preferences.setInt('dataset', Datasets.places365.index);
     }

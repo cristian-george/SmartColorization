@@ -4,7 +4,6 @@ import 'package:photo_app/utils/shared_preferences.dart';
 import '../enums.dart';
 import '../widgets/custom_list_widget.dart';
 import '../widgets/settings/image_format_list_widget.dart';
-import '../widgets/settings/theme_list_widget.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -21,17 +20,7 @@ class _SettingsPageState extends State<SettingsPage> {
           context: context,
           pageBuilder: (BuildContext context, Animation<double> animation,
                   Animation<double> secondaryAnimation) =>
-              const ImageFormatPopup(title: "Image file formats"),
-        ).then((value) {
-          setState(() {});
-        });
-        break;
-      case 1:
-        showGeneralDialog(
-          context: context,
-          pageBuilder: (BuildContext context, Animation<double> animation,
-                  Animation<double> secondaryAnimation) =>
-              const ThemePopup(title: "Themes"),
+              const ImageFormatPopup(title: "Choose image format..."),
         ).then((value) {
           setState(() {});
         });
@@ -86,7 +75,6 @@ class _SettingsListState extends State<SettingsList> {
   late List<Map<String, dynamic>> _settings;
 
   _updateSettingsList() {
-    final theme = sharedPreferences.getInt('theme')!;
     final format = sharedPreferences.getInt('format')!;
 
     _settings = [
@@ -94,11 +82,6 @@ class _SettingsListState extends State<SettingsList> {
         "id": 0,
         "name": 'Image file formats',
         "trailing": ImageFormats.values[format].toString().split('.')[1]
-      },
-      {
-        "id": 1,
-        "name": 'Themes',
-        "trailing": Themes.values[theme].toString().split('.')[1]
       },
     ];
   }
