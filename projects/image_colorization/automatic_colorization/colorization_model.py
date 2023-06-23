@@ -14,7 +14,8 @@ from matplotlib import pyplot as plt
 from skimage.color import lab2rgb
 from skimage.transform import resize
 
-from colorization_utils import check_gpu_support, limit_gpu_memory, increase_cpu_num_threads, rgb2lab_split_image
+from automatic_colorization.colorization_utils import check_gpu_support, limit_gpu_memory, increase_cpu_num_threads, \
+    rgb2lab_split_image
 
 
 class ColorizationModel:
