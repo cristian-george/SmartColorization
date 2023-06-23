@@ -3,10 +3,13 @@ import 'package:http/http.dart' as http;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:photo_app/database/photo_db_helper.dart';
-import 'package:photo_app/database/photo_model.dart';
-import 'package:photo_app/utils/extensions/save_photo_extension.dart';
-import 'package:photo_app/widgets/save_image_widget.dart';
+
+import '../database/photo_db_helper.dart';
+import '../database/photo_model.dart';
+import '../database/save_photo_extension.dart';
+import '../utils/extensions/convert_image_to_grayscale_extension.dart';
+import '../widgets/save_image_widget.dart';
+import '../widgets/share_image_widget.dart';
 
 import '../services/colorization_service.dart';
 import '../utils/shared_preferences.dart';
@@ -33,17 +36,16 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
   Uint8List? _originalImageData;
   Uint8List? _processedImageData;
 
-  bool _isGrayscale = false;
+  bool _isGrayscale = true;
   bool _isEyeShown = false;
-  bool _isColoring = false;
+  ColorizationStatus _colorizationStatus = ColorizationStatus.none;
+  Map<String, dynamic> _status = {};
 
   @override
   void initState() {
     super.initState();
 
-    _originalImageData = widget.imageData;
-    _convertToGrayscale();
-
+    _originalImageData = widget.imageData.toGrayscale();
     ColorizationService.setInterpreter();
   }
 
@@ -79,8 +81,15 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
                   tooltip: 'Choose dataset',
                   icon: const Icon(Icons.dataset),
                 )
-              : SaveImageWidget(
-                  imageData: _processedImageData!,
+              : Row(
+                  children: [
+                    SaveImageWidget(
+                      imageData: _processedImageData!,
+                    ),
+                    ShareImageWidget(
+                      imageData: _processedImageData!,
+                    ),
+                  ],
                 ),
         ],
       ),
@@ -110,39 +119,24 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
               ),
             Padding(
               padding: const EdgeInsets.only(bottom: 20),
-              child: Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  if (_isGrayscale && !_isColoring)
+                  if (_isGrayscale &&
+                      _colorizationStatus == ColorizationStatus.none)
                     ButtonOptionWidget(
                       text: 'Colorize image',
                       onSelected: () {
-                        if (_isColoring == false) {
-                          _isColoring = true;
-                          setState(() {});
-                        }
+                        setState(() {
+                          _colorizationStatus =
+                              ColorizationStatus.preprocessing;
+                        });
                       },
                     ),
-                  if (_isColoring)
-                    FutureBuilder(
-                      future: _colorizeImageOnDevice(_originalImageData!),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData) {
-                          return const CircularProgressIndicator();
-                        } else {
-                          {
-                            setState(() {
-                              _isGrayscale = false;
-                              _isEyeShown = true;
-                              _isColoring = false;
-                              _processedImageData = snapshot.data;
-                            });
-
-                            return Container();
-                          }
-                        }
-                      },
-                    )
+                  if (_isGrayscale &&
+                      _colorizationStatus != ColorizationStatus.none)
+                    _colorizeImageLocal(),
                 ],
               ),
             ),
@@ -162,33 +156,53 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
     });
   }
 
-  void _convertToGrayscale() {
-    final bool isGrayscale =
-        ColorizationService.isImageGrayscale(_originalImageData!);
+  _colorizeImageLocal() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        if (_colorizationStatus == ColorizationStatus.preprocessing)
+          FutureBuilder(
+            future: compute(
+              ColorizationService.preprocessingImage,
+              _originalImageData!,
+            ),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const CircularProgressIndicator();
+              } else {
+                {
+                  _status = snapshot.data;
+                  _status = ColorizationService.runModel(_status);
 
-    if (!isGrayscale) {
-      _originalImageData =
-          ColorizationService.grayscaleImage(_originalImageData!);
-    }
+                  _colorizationStatus = ColorizationStatus.postprocessing;
 
-    _isGrayscale = true;
-    setState(() {});
-  }
+                  return Container();
+                }
+              }
+            },
+          ),
+        if (_colorizationStatus == ColorizationStatus.postprocessing)
+          FutureBuilder(
+            future: compute(
+              ColorizationService.postprocessingImage,
+              _status,
+            ),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const CircularProgressIndicator();
+              } else {
+                {
+                  _isGrayscale = false;
+                  _isEyeShown = true;
+                  _colorizationStatus = ColorizationStatus.none;
+                  _processedImageData = snapshot.data;
 
-  void _colorizeImageLocal() {
-    _processedImageData =
-        ColorizationService.colorizeImage(_originalImageData!);
-
-    setState(() {
-      _isGrayscale = false;
-      _isEyeShown = true;
-    });
-  }
-
-  Future<Uint8List> _colorizeImageOnDevice(Uint8List image) {
-    return compute(
-      ColorizationService.colorizeImage,
-      image,
+                  return Container();
+                }
+              }
+            },
+          )
+      ],
     );
   }
 

@@ -22,6 +22,7 @@ dependencies:
   permission_handler: ^10.2.0
   path_provider: ^2.0.15
   sqflite: ^2.2.8+4
+  share_plus: ^7.0.2
 
   tflite_flutter: ^0.9.5
   flutter_color_models: ^1.3.3+2

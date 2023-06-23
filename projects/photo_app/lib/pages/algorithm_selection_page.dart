@@ -132,7 +132,7 @@ class _AlgorithmSelectionPageState extends State<AlgorithmSelectionPage>
                               context,
                               MaterialPageRoute(
                                 builder: (context) => ImageFiltersPage(
-                                  title: 'Image Color Filters',
+                                  title: 'Color Filters',
                                   imageData: _isCropped
                                       ? _croppedImageData!
                                       : _originalImageData!,
@@ -144,13 +144,13 @@ class _AlgorithmSelectionPageState extends State<AlgorithmSelectionPage>
                           },
                         ),
                         ButtonOptionWidget(
-                          text: 'Image Convolution Filters',
+                          text: 'Image Convolutional Filters',
                           onSelected: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => ImageFiltersPage(
-                                  title: 'Image Convolution Filters',
+                                  title: 'Convolutional Filters',
                                   imageData: _isCropped
                                       ? _croppedImageData!
                                       : _originalImageData!,

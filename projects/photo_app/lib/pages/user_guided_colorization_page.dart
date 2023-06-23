@@ -7,14 +7,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_color_models/flutter_color_models.dart';
 import 'package:photo_app/constants.dart';
 import 'package:photo_app/database/photo_model.dart';
-import 'package:photo_app/utils/extensions/image_size_extension.dart';
-import 'package:photo_app/utils/extensions/save_photo_extension.dart';
+import 'package:photo_app/utils/extensions/convert_image_to_grayscale_extension.dart';
+import 'package:photo_app/utils/extensions/get_image_size_extension.dart';
+import 'package:photo_app/database/save_photo_extension.dart';
 
 import '../database/photo_db_helper.dart';
-import '../services/colorization_service.dart';
 import '../widgets/color_picker_popup.dart';
 import '../widgets/image_widget.dart';
 import '../widgets/save_image_widget.dart';
+import '../widgets/share_image_widget.dart';
 
 class UserGuidedColorizationPage extends StatefulWidget {
   const UserGuidedColorizationPage({
@@ -49,8 +50,7 @@ class _UserGuidedColorizationPageState
 
     _controller = ScrollController();
 
-    _originalImageData = widget.imageData;
-    _convertToGrayscale();
+    _originalImageData = widget.imageData.toGrayscale();
   }
 
   @override
@@ -87,8 +87,15 @@ class _UserGuidedColorizationPageState
         elevation: 0,
         actions: [
           if (_processedImageData != null)
-            SaveImageWidget(
-              imageData: _processedImageData!,
+            Row(
+              children: [
+                SaveImageWidget(
+                  imageData: _processedImageData!,
+                ),
+                ShareImageWidget(
+                  imageData: _processedImageData!,
+                ),
+              ],
             ),
           IconButton(
             onPressed: _colorPicker,
@@ -227,18 +234,6 @@ class _UserGuidedColorizationPageState
             ));
   }
 
-  void _convertToGrayscale() {
-    final bool isGrayscale =
-        ColorizationService.isImageGrayscale(_originalImageData!);
-
-    if (!isGrayscale) {
-      _originalImageData =
-          ColorizationService.grayscaleImage(_originalImageData!);
-    }
-
-    setState(() {});
-  }
-
   void _colorizeImage() async {
     if (_pickedColors.isEmpty) {
       _processedImageData = null;
@@ -267,7 +262,7 @@ class _UserGuidedColorizationPageState
     };
 
     var response = await http.post(
-      Uri.parse('http://10.146.1.114:5000/guided_colorization'),
+      Uri.parse('http://192.168.0.139:5000/guided_colorization'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(map),
     );

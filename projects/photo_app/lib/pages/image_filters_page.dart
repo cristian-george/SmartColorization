@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:photo_app/database/photo_model.dart';
-import 'package:photo_app/utils/extensions/save_photo_extension.dart';
+import 'package:photo_app/database/save_photo_extension.dart';
 import 'package:photo_app/utils/filter_utils.dart';
 import 'package:photo_app/widgets/image_widget.dart';
 import 'package:photofilters/filters/filters.dart';
@@ -12,6 +12,7 @@ import '../database/photo_db_helper.dart';
 import '../widgets/image_filters/filtered_image_list_widget.dart';
 import '../widgets/image_filters/filtered_image_widget.dart';
 import '../widgets/save_image_widget.dart';
+import '../widgets/share_image_widget.dart';
 
 class ImageFiltersPage extends StatefulWidget {
   const ImageFiltersPage({
@@ -88,9 +89,17 @@ class _ImageFiltersPageState extends State<ImageFiltersPage> {
         elevation: 0,
         actions: [
           if (_filter != widget.filters.first)
-            SaveImageWidget(
-              imageData:
-                  Uint8List.fromList(FilterUtils.getCachedFilter(_filter)!),
+            Row(
+              children: [
+                SaveImageWidget(
+                  imageData:
+                      Uint8List.fromList(FilterUtils.getCachedFilter(_filter)!),
+                ),
+                ShareImageWidget(
+                  imageData:
+                      Uint8List.fromList(FilterUtils.getCachedFilter(_filter)!),
+                ),
+              ],
             ),
         ],
       ),

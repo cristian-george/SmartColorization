@@ -8,6 +8,7 @@ import 'package:photo_app/widgets/image_widget.dart';
 
 import '../widgets/button_option_widget.dart';
 import '../widgets/save_image_widget.dart';
+import '../widgets/share_image_widget.dart';
 
 class EditedImagesHistoryPage extends StatefulWidget {
   const EditedImagesHistoryPage({Key? key}) : super(key: key);
@@ -71,8 +72,15 @@ class _EditedImagesHistoryPageState extends State<EditedImagesHistoryPage> {
                 icon: const Icon(Icons.delete_outline),
               ),
               if (_expandImage)
-                SaveImageWidget(
-                  imageData: _processedImageData!,
+                Row(
+                  children: [
+                    SaveImageWidget(
+                      imageData: _processedImageData!,
+                    ),
+                    ShareImageWidget(
+                      imageData: _processedImageData!,
+                    ),
+                  ],
                 ),
             ],
           ),

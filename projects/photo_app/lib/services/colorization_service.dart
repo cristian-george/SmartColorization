@@ -5,6 +5,13 @@ import 'package:photo_app/utils/shared_preferences.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:flutter_color_models/flutter_color_models.dart';
 
+enum ColorizationStatus {
+  none,
+  preprocessing,
+  colorizing,
+  postprocessing,
+}
+
 class ColorizationService {
   static late Interpreter interpreter;
 
@@ -23,14 +30,13 @@ class ColorizationService {
     interpreter.invoke();
   }
 
-  static Uint8List colorizeImage(Uint8List imageData) {
-    // Preprocessing
+  static preprocessingImage(Uint8List imageData) {
     img.Image inputImage = img.decodeImage(imageData)!;
 
     var labImage = _rgbToLab(inputImage);
 
     // Lightness in original dimension
-    List<double> originalLightness =
+    List<double> originalLuminosity =
         labImage.map((pixel) => pixel.lightness.toDouble()).toList();
 
     img.Image resizedImage = img.copyResize(
@@ -42,22 +48,44 @@ class ColorizationService {
 
     labImage = _rgbToLab(resizedImage);
 
-    List<double> lum =
+    List<double> luminosity =
         labImage.map((pixel) => pixel.lightness.toDouble()).toList();
 
+    return {
+      'image': imageData,
+      'luminosity H x W': originalLuminosity,
+      'luminosity 224 x 224': luminosity,
+    };
+  }
+
+  static runModel(map) {
+    final luminosity = map['luminosity 224 x 224'] as List<double>;
     var chrominance =
         List.filled(1 * 224 * 224 * 2, 0.0).reshape([1, 224, 224, 2]);
 
-    // Run the model
-    interpreter.run(lum.reshape([1, 224, 224, 1]), chrominance);
+    interpreter.run(luminosity.reshape([1, 224, 224, 1]), chrominance);
     interpreter.close();
 
-    // Postprocessing
+    return {
+      'image': map['image'],
+      'luminosity H x W': map['luminosity H x W'],
+      'luminosity 224 x 224': luminosity,
+      'chrominance 224 x 224': chrominance,
+    };
+  }
+
+  static Uint8List postprocessingImage(map) {
+    img.Image inputImage = img.decodeImage(map['image'] as Uint8List)!;
+    var originalLuminosity = map['luminosity H x W'] as List<double>;
+
+    var luminosity = map['luminosity 224 x 224'] as List<double>;
+    var chrominance = map['chrominance 224 x 224'] as List;
+
     var i = 0;
 
     List<LabColor> outputLabColors =
         chrominance.reshape([224 * 224, 2]).map((pixel) {
-      double l = lum[i++];
+      double l = luminosity[i++];
       double a = pixel[0] * 128;
       double b = pixel[1] * 128;
 
@@ -80,14 +108,14 @@ class ColorizationService {
       interpolation: img.Interpolation.cubic,
     );
 
-    labImage = _rgbToLab(result);
+    var labImage = _rgbToLab(result);
 
     var newRgb = img.Image(
         width: inputImage.width, height: inputImage.height, numChannels: 3);
 
     for (int y = 0; y < result.height; y++) {
       for (int x = 0; x < result.width; x++) {
-        double l = originalLightness[y * inputImage.width + x];
+        double l = originalLuminosity[y * inputImage.width + x];
         double a = labImage[y * inputImage.width + x].a.toDouble();
         double b = labImage[y * inputImage.width + x].b.toDouble();
         RgbColor rgbColor = RgbColor.from(LabColor(l, a, b));
@@ -96,31 +124,6 @@ class ColorizationService {
     }
 
     return img.encodeJpg(newRgb);
-  }
-
-  static Uint8List grayscaleImage(Uint8List imageData) {
-    img.Image image = img.decodeImage(imageData)!;
-    img.Image grayscaleImage = img.grayscale(image);
-
-    return img.encodeJpg(grayscaleImage);
-  }
-
-  static bool isImageGrayscale(Uint8List imageData) {
-    img.Image image = img.decodeImage(imageData)!;
-
-    for (int y = 0; y < image.height; y++) {
-      for (int x = 0; x < image.width; x++) {
-        img.Color pixel = image.getPixel(x, y);
-        int red = pixel.r.toInt();
-        int green = pixel.g.toInt();
-        int blue = pixel.b.toInt();
-
-        if (red != green || red != blue || green != blue) {
-          return false;
-        }
-      }
-    }
-    return true;
   }
 
   static List<LabColor> _rgbToLab(img.Image rgbImage) {
@@ -139,12 +142,12 @@ class ColorizationService {
     return result;
   }
 
-  static img.Image _labToRgb(List<LabColor> labColors, int width, int height) {
+  static img.Image _labToRgb(List<LabColor> labImage, int width, int height) {
     img.Image result = img.Image(width: width, height: height);
 
     for (int y = 0; y < height; y++) {
       for (int x = 0; x < width; x++) {
-        RgbColor rgbColor = labColors[y * width + x].toRgbColor();
+        RgbColor rgbColor = labImage[y * width + x].toRgbColor();
         result.setPixelRgb(x, y, rgbColor.red, rgbColor.green, rgbColor.blue);
       }
     }
