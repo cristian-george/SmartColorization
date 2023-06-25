@@ -8,13 +8,13 @@ import '../database/photo_db_helper.dart';
 import '../database/photo_model.dart';
 import '../database/save_photo_extension.dart';
 import '../utils/extensions/convert_image_to_grayscale_extension.dart';
+import '../widgets/colorization_image_widget.dart';
 import '../widgets/save_image_widget.dart';
 import '../widgets/share_image_widget.dart';
 
 import '../services/colorization_service.dart';
 import '../utils/shared_preferences.dart';
 import '../widgets/button_option_widget.dart';
-import '../widgets/image_widget.dart';
 import '../widgets/settings/dataset_list_widget.dart';
 
 class AutomaticColorizationPage extends StatefulWidget {
@@ -38,8 +38,7 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
 
   bool _isGrayscale = true;
   bool _isEyeShown = false;
-  ColorizationStatus _colorizationStatus = ColorizationStatus.none;
-  Map<String, dynamic> _status = {};
+  bool _isColoring = false;
 
   @override
   void initState() {
@@ -99,17 +98,28 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
           right: 10,
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Expanded(
-              child: Center(
-                child: ImageWidget(
-                  originalImageData: _originalImageData,
-                  processedImageData: _processedImageData,
-                  isEyeShown: _isEyeShown,
-                ),
+              child: Align(
+                child: ColorizationImageWidget(
+                    originalImageData: _originalImageData,
+                    processedImageData: _processedImageData,
+                    isEyeShown: _isEyeShown,
+                    isColoring: _isColoring,
+                    onProcessedImage: (image) {
+                      _processedImageData = image;
+                      _isEyeShown = true;
+                      _isColoring = false;
+                      _isGrayscale = false;
+
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        setState(() {});
+                      });
+                    }),
               ),
             ),
-            if (_isGrayscale)
+            if (_isGrayscale && !_isColoring)
               const Padding(
                 padding: EdgeInsets.only(bottom: 10),
                 child: Divider(
@@ -123,20 +133,15 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  if (_isGrayscale &&
-                      _colorizationStatus == ColorizationStatus.none)
+                  if (_isGrayscale && !_isColoring)
                     ButtonOptionWidget(
                       text: 'Colorize image',
                       onSelected: () {
                         setState(() {
-                          _colorizationStatus =
-                              ColorizationStatus.preprocessing;
+                          _isColoring = true;
                         });
                       },
                     ),
-                  if (_isGrayscale &&
-                      _colorizationStatus != ColorizationStatus.none)
-                    _colorizeImageLocal(),
                 ],
               ),
             ),
@@ -154,56 +159,6 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
             const DatasetPopup(title: "Colorize...")).then((value) {
       ColorizationService.setInterpreter();
     });
-  }
-
-  _colorizeImageLocal() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        if (_colorizationStatus == ColorizationStatus.preprocessing)
-          FutureBuilder(
-            future: compute(
-              ColorizationService.preprocessingImage,
-              _originalImageData!,
-            ),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return const CircularProgressIndicator();
-              } else {
-                {
-                  _status = snapshot.data;
-                  _status = ColorizationService.runModel(_status);
-
-                  _colorizationStatus = ColorizationStatus.postprocessing;
-
-                  return Container();
-                }
-              }
-            },
-          ),
-        if (_colorizationStatus == ColorizationStatus.postprocessing)
-          FutureBuilder(
-            future: compute(
-              ColorizationService.postprocessingImage,
-              _status,
-            ),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return const CircularProgressIndicator();
-              } else {
-                {
-                  _isGrayscale = false;
-                  _isEyeShown = true;
-                  _colorizationStatus = ColorizationStatus.none;
-                  _processedImageData = snapshot.data;
-
-                  return Container();
-                }
-              }
-            },
-          )
-      ],
-    );
   }
 
   void _colorizeImageOnline() async {

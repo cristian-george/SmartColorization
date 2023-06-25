@@ -5,13 +5,6 @@ import 'package:photo_app/utils/shared_preferences.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:flutter_color_models/flutter_color_models.dart';
 
-enum ColorizationStatus {
-  none,
-  preprocessing,
-  colorizing,
-  postprocessing,
-}
-
 class ColorizationService {
   static late Interpreter interpreter;
 
@@ -58,8 +51,8 @@ class ColorizationService {
     };
   }
 
-  static runModel(map) {
-    final luminosity = map['luminosity 224 x 224'] as List<double>;
+  static runModel(Map<String, dynamic> json) {
+    final luminosity = json['luminosity 224 x 224'] as List<double>;
     var chrominance =
         List.filled(1 * 224 * 224 * 2, 0.0).reshape([1, 224, 224, 2]);
 
@@ -67,19 +60,19 @@ class ColorizationService {
     interpreter.close();
 
     return {
-      'image': map['image'],
-      'luminosity H x W': map['luminosity H x W'],
+      'image': json['image'],
+      'luminosity H x W': json['luminosity H x W'],
       'luminosity 224 x 224': luminosity,
       'chrominance 224 x 224': chrominance,
     };
   }
 
-  static Uint8List postprocessingImage(map) {
-    img.Image inputImage = img.decodeImage(map['image'] as Uint8List)!;
-    var originalLuminosity = map['luminosity H x W'] as List<double>;
+  static Uint8List postprocessingImage(Map<String, dynamic> json) {
+    img.Image inputImage = img.decodeImage(json['image'] as Uint8List)!;
+    var originalLuminosity = json['luminosity H x W'] as List<double>;
 
-    var luminosity = map['luminosity 224 x 224'] as List<double>;
-    var chrominance = map['chrominance 224 x 224'] as List;
+    var luminosity = json['luminosity 224 x 224'] as List<double>;
+    var chrominance = json['chrominance 224 x 224'] as List;
 
     var i = 0;
 
