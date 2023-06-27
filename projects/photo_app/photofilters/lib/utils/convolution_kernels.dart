@@ -100,9 +100,3 @@ ConvolutionKernel lowPass5x5Kernel = ConvolutionKernel([
   1, 4,  4, 4, 1,
   1, 1,  1, 1, 1,
 ]);
-
-ConvolutionKernel highPass3x3Kernel = ConvolutionKernel([
-   0, -1,  0,
-  -1,  5, -1,
-   0, -1,  0,
-]);

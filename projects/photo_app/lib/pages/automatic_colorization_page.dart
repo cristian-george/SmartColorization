@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -12,8 +9,7 @@ import '../widgets/colorization_image_widget.dart';
 import '../widgets/save_image_widget.dart';
 import '../widgets/share_image_widget.dart';
 
-import '../services/colorization_service.dart';
-import '../utils/shared_preferences.dart';
+import '../services/automatic_colorization_local.dart';
 import '../widgets/button_option_widget.dart';
 import '../widgets/settings/dataset_list_widget.dart';
 
@@ -45,7 +41,7 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
     super.initState();
 
     _originalImageData = widget.imageData.toGrayscale();
-    ColorizationService.setInterpreter();
+    AutomaticColorizationLocal.setInterpreter();
   }
 
   @override
@@ -74,22 +70,23 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          _processedImageData == null
-              ? IconButton(
-                  onPressed: _chooseDataset,
-                  tooltip: 'Choose dataset',
-                  icon: const Icon(Icons.dataset),
-                )
-              : Row(
-                  children: [
-                    SaveImageWidget(
-                      imageData: _processedImageData!,
-                    ),
-                    ShareImageWidget(
-                      imageData: _processedImageData!,
-                    ),
-                  ],
+          if (_isGrayscale && !_isColoring)
+            IconButton(
+              onPressed: _chooseDataset,
+              tooltip: 'Choose dataset',
+              icon: const Icon(Icons.dataset),
+            ),
+          if (_processedImageData != null)
+            Row(
+              children: [
+                SaveImageWidget(
+                  imageData: _processedImageData!,
                 ),
+                ShareImageWidget(
+                  imageData: _processedImageData!,
+                ),
+              ],
+            ),
         ],
       ),
       body: Padding(
@@ -101,22 +98,23 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Expanded(
-              child: Align(
+              child: Center(
                 child: ColorizationImageWidget(
-                    originalImageData: _originalImageData,
-                    processedImageData: _processedImageData,
-                    isEyeShown: _isEyeShown,
-                    isColoring: _isColoring,
-                    onProcessedImage: (image) {
-                      _processedImageData = image;
-                      _isEyeShown = true;
-                      _isColoring = false;
-                      _isGrayscale = false;
+                  originalImageData: _originalImageData,
+                  processedImageData: _processedImageData,
+                  isEyeShown: _isEyeShown,
+                  isColoring: _isColoring,
+                  onProcessedImage: (image) {
+                    _processedImageData = image;
+                    _isEyeShown = true;
+                    _isColoring = false;
+                    _isGrayscale = false;
 
-                      Future.delayed(const Duration(milliseconds: 100), () {
-                        setState(() {});
-                      });
-                    }),
+                    Future.delayed(const Duration(milliseconds: 100), () {
+                      setState(() {});
+                    });
+                  },
+                ),
               ),
             ),
             if (_isGrayscale && !_isColoring)
@@ -157,26 +155,21 @@ class _AutomaticColorizationPageState extends State<AutomaticColorizationPage> {
         pageBuilder: (BuildContext context, Animation<double> animation,
                 Animation<double> secondaryAnimation) =>
             const DatasetPopup(title: "Colorize...")).then((value) {
-      ColorizationService.setInterpreter();
+      AutomaticColorizationLocal.setInterpreter();
     });
   }
 
-  void _colorizeImageOnline() async {
-    final map = {
-      'image': base64Encode(_originalImageData!),
-      'dataset': sharedPreferences.getInt('dataset')!,
-    };
-
-    var response = await http.post(
-      Uri.parse('http://10.146.1.114:5000/automatic_colorization'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(map),
-    );
-
-    setState(() {
-      _processedImageData = response.bodyBytes;
-      _isGrayscale = false;
-      _isEyeShown = true;
+/*void _colorizeImageOnline(image) async {
+    AutomaticColorizationOnline.dataset = sharedPreferences.getInt('dataset')!;
+    AutomaticColorizationOnline.colorize(_originalImageData!).then((image) {
+      if (image != null) {
+        setState(() {
+          showToast("The image has been updated successfully!");
+          _processedImageData = image;
+          _isGrayscale = false;
+          _isEyeShown = true;
+        });
+      }
     });
-  }
+  }*/
 }

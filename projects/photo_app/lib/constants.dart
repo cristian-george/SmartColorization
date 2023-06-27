@@ -7,7 +7,8 @@ const List<String> applicationDescription = [
 
 const String guidedColorizationInstruction =
     'There is no color placed on the image yet. '
-    'Please long tap anywhere on the image and open the palette button above to choose how to colorize that area in the image.';
+    'Please long tap anywhere on the image and open the palette button above to choose how to colorize that area in the image. '
+    'To remove a color from the list, long tap on it.';
 
 const List<AssetImage> imageAssets = [
   AssetImage('assets/home_page_photos/places365_01.png'),
@@ -27,3 +28,5 @@ const List<String> models = [
   modelCelebA,
   modelFlowers,
 ];
+
+const String host = '192.168.0.139:5000';

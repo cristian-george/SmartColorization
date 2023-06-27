@@ -1,14 +1,15 @@
 import 'dart:typed_data';
 import 'package:image/image.dart' as img;
-import 'package:photo_app/constants.dart';
-import 'package:photo_app/utils/shared_preferences.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:flutter_color_models/flutter_color_models.dart';
 
-class ColorizationService {
-  static late Interpreter interpreter;
+import '../constants.dart';
+import '../utils/shared_preferences.dart';
 
-  static final options = InterpreterOptions()
+class AutomaticColorizationLocal {
+  static late Interpreter _interpreter;
+
+  static final _options = InterpreterOptions()
     ..useNnApiForAndroid = true
     ..threads = 8;
 
@@ -19,8 +20,8 @@ class ColorizationService {
       model = models[index];
     }
 
-    interpreter = await Interpreter.fromAsset(model, options: options);
-    interpreter.invoke();
+    _interpreter = await Interpreter.fromAsset(model, options: _options);
+    _interpreter.invoke();
   }
 
   static preprocessingImage(Uint8List imageData) {
@@ -29,7 +30,7 @@ class ColorizationService {
     var labImage = _rgbToLab(inputImage);
 
     // Lightness in original dimension
-    List<double> originalLuminosity =
+    List<double> originalLightness =
         labImage.map((pixel) => pixel.lightness.toDouble()).toList();
 
     img.Image resizedImage = img.copyResize(
@@ -41,44 +42,44 @@ class ColorizationService {
 
     labImage = _rgbToLab(resizedImage);
 
-    List<double> luminosity =
+    List<double> lightness =
         labImage.map((pixel) => pixel.lightness.toDouble()).toList();
 
     return {
       'image': imageData,
-      'luminosity H x W': originalLuminosity,
-      'luminosity 224 x 224': luminosity,
+      'lightness H x W': originalLightness,
+      'lightness 224 x 224': lightness,
     };
   }
 
   static runModel(Map<String, dynamic> json) {
-    final luminosity = json['luminosity 224 x 224'] as List<double>;
+    final lightness = json['lightness 224 x 224'] as List<double>;
     var chrominance =
         List.filled(1 * 224 * 224 * 2, 0.0).reshape([1, 224, 224, 2]);
 
-    interpreter.run(luminosity.reshape([1, 224, 224, 1]), chrominance);
-    interpreter.close();
+    _interpreter.run(lightness.reshape([1, 224, 224, 1]), chrominance);
+    _interpreter.close();
 
     return {
       'image': json['image'],
-      'luminosity H x W': json['luminosity H x W'],
-      'luminosity 224 x 224': luminosity,
+      'lightness H x W': json['lightness H x W'],
+      'lightness 224 x 224': lightness,
       'chrominance 224 x 224': chrominance,
     };
   }
 
   static Uint8List postprocessingImage(Map<String, dynamic> json) {
     img.Image inputImage = img.decodeImage(json['image'] as Uint8List)!;
-    var originalLuminosity = json['luminosity H x W'] as List<double>;
+    var originalLightness = json['lightness H x W'] as List<double>;
 
-    var luminosity = json['luminosity 224 x 224'] as List<double>;
+    var lightness = json['lightness 224 x 224'] as List<double>;
     var chrominance = json['chrominance 224 x 224'] as List;
 
     var i = 0;
 
     List<LabColor> outputLabColors =
         chrominance.reshape([224 * 224, 2]).map((pixel) {
-      double l = luminosity[i++];
+      double l = lightness[i++];
       double a = pixel[0] * 128;
       double b = pixel[1] * 128;
 
@@ -108,7 +109,7 @@ class ColorizationService {
 
     for (int y = 0; y < result.height; y++) {
       for (int x = 0; x < result.width; x++) {
-        double l = originalLuminosity[y * inputImage.width + x];
+        double l = originalLightness[y * inputImage.width + x];
         double a = labImage[y * inputImage.width + x].a.toDouble();
         double b = labImage[y * inputImage.width + x].b.toDouble();
         RgbColor rgbColor = RgbColor.from(LabColor(l, a, b));

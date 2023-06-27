@@ -89,17 +89,17 @@ class Mean5x5Filter extends ImageFilter {
 
 List<Filter> convolutionFilters = [
   IdentityFilter(),
-  EmbossFilter(),
+  BlurFilter(),
   SharpenFilter(),
   ColoredEdgeFilter(),
-  BlurFilter(),
   EdgeDetectionMediumFilter(),
   EdgeDetectionHardFilter(),
+  EmbossFilter(),
+  Mean3x3Filter(),
+  Mean5x5Filter(),
   Gaussian3x3Filter(),
   Gaussian5x5Filter(),
   Gaussian7x7Filter(),
   LowPass3x3Filter(),
   LowPass5x5Filter(),
-  Mean3x3Filter(),
-  Mean5x5Filter(),
 ];

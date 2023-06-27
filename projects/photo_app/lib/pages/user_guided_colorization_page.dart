@@ -1,17 +1,17 @@
-import 'dart:convert';
 import 'dart:math';
-import 'package:http/http.dart' as http;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_color_models/flutter_color_models.dart';
-import 'package:photo_app/constants.dart';
-import 'package:photo_app/database/photo_model.dart';
-import 'package:photo_app/utils/extensions/convert_image_to_grayscale_extension.dart';
-import 'package:photo_app/utils/extensions/get_image_size_extension.dart';
-import 'package:photo_app/database/save_photo_extension.dart';
 
+import '../constants.dart';
 import '../database/photo_db_helper.dart';
+import '../database/photo_model.dart';
+import '../database/save_photo_extension.dart';
+import '../services/guided_colorization_online.dart';
+import '../utils/show_toast.dart';
+import '../utils/extensions/convert_image_to_grayscale_extension.dart';
+import '../utils/extensions/get_image_size_extension.dart';
 import '../widgets/color_picker_popup.dart';
 import '../widgets/image_widget.dart';
 import '../widgets/save_image_widget.dart';
@@ -122,11 +122,7 @@ class _UserGuidedColorizationPageState
                       itemCount: _pickedColors.length,
                       itemBuilder: (BuildContext context, int index) {
                         return GestureDetector(
-                          onLongPressUp: () {
-                            _pickedColors.removeAt(index);
-                            setState(() {});
-                            _colorizeImage();
-                          },
+                          onLongPressUp: () => _removeColor(index),
                           child: Padding(
                             padding: const EdgeInsets.all(5.0),
                             child: Column(
@@ -164,37 +160,8 @@ class _UserGuidedColorizationPageState
                 child: LayoutBuilder(
                   builder: (BuildContext context, BoxConstraints constraints) {
                     return GestureDetector(
-                      onLongPressStart: (LongPressStartDetails details) async {
-                        RenderBox? box =
-                            context.findRenderObject() as RenderBox?;
-                        Offset localPosition =
-                            box!.globalToLocal(details.globalPosition);
-
-                        double displayWidth = constraints.maxWidth;
-                        double displayHeight = constraints.maxHeight;
-
-                        final imageSize = await _originalImageData!.getSize();
-
-                        double imageAspectRatio =
-                            imageSize.width / imageSize.height;
-                        double displayAspectRatio =
-                            displayWidth / displayHeight;
-
-                        double scaleX, scaleY;
-
-                        if (imageAspectRatio > displayAspectRatio) {
-                          scaleX = displayWidth / imageSize.width;
-                          scaleY = scaleX;
-                        } else {
-                          scaleY = displayHeight / imageSize.height;
-                          scaleX = scaleY;
-                        }
-
-                        int x = (localPosition.dx / scaleX).round();
-                        int y = (localPosition.dy / scaleY).round();
-
-                        _currentCoordinates = Point(x, y);
-                      },
+                      onLongPressStart: (LongPressStartDetails details) =>
+                          _selectCoordinate(context, constraints, details),
                       child: ImageWidget(
                         originalImageData: _originalImageData,
                         processedImageData: _processedImageData,
@@ -213,25 +180,53 @@ class _UserGuidedColorizationPageState
 
   void _colorPicker() {
     showGeneralDialog(
-        context: context,
-        pageBuilder: (BuildContext context, Animation<double> animation,
-                Animation<double> secondaryAnimation) =>
-            ColorPickerPopup(
-              title: "Pick a Color",
-              onPickedColor: (Color color) {
-                _pickedColors.add({_currentCoordinates: color});
-                if (_pickedColors.length > 1) {
-                  _controller.animateTo(
-                    _controller.position.maxScrollExtent * 10,
-                    duration: const Duration(milliseconds: 100),
-                    curve: Curves.ease,
-                  );
-                }
+      context: context,
+      pageBuilder: (context, animation, secondaryAnimation) => ColorPickerPopup(
+        title: "Pick a Color",
+        onPickedColor: (Color color) {
+          _pickedColors.add({_currentCoordinates: color});
+          if (_pickedColors.length > 1) {
+            _controller.animateTo(
+              _controller.position.maxScrollExtent * 10,
+              duration: const Duration(milliseconds: 100),
+              curve: Curves.ease,
+            );
+          }
 
-                _colorizeImage();
-                setState(() {});
-              },
-            ));
+          setState(() {
+            _colorizeImage();
+          });
+        },
+      ),
+    );
+  }
+
+  void _selectCoordinate(context, constraints, details) async {
+    RenderBox? box = context.findRenderObject() as RenderBox?;
+    Offset localPosition = box!.globalToLocal(details.globalPosition);
+
+    double displayWidth = constraints.maxWidth;
+    double displayHeight = constraints.maxHeight;
+
+    final imageSize = await _originalImageData!.getSize();
+
+    double imageAspectRatio = imageSize.width / imageSize.height;
+    double displayAspectRatio = displayWidth / displayHeight;
+
+    double scaleX, scaleY;
+
+    if (imageAspectRatio > displayAspectRatio) {
+      scaleX = displayWidth / imageSize.width;
+      scaleY = scaleX;
+    } else {
+      scaleY = displayHeight / imageSize.height;
+      scaleX = scaleY;
+    }
+
+    int x = (localPosition.dx / scaleX).round();
+    int y = (localPosition.dy / scaleY).round();
+
+    _currentCoordinates = Point(x, y);
   }
 
   void _colorizeImage() async {
@@ -255,21 +250,25 @@ class _UserGuidedColorizationPageState
       });
     }
 
-    final map = {
-      'image': base64Encode(_originalImageData!),
-      'coordinates': coordinates,
-      'colors': colors,
-    };
+    GuidedColorizationOnline.coordinates = coordinates;
+    GuidedColorizationOnline.colors = colors;
 
-    var response = await http.post(
-      Uri.parse('http://192.168.0.139:5000/guided_colorization'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(map),
-    );
-
-    setState(() {
-      _processedImageData = response.bodyBytes;
-      _isEyeShown = true;
+    GuidedColorizationOnline.colorize(_originalImageData!).then((image) {
+      if (image != null) {
+        setState(() {
+          showToast("The image has been updated successfully!");
+          _processedImageData = image;
+          _isEyeShown = true;
+        });
+      }
     });
+  }
+
+  void _removeColor(index) {
+    setState(() {
+      _pickedColors.removeAt(index);
+    });
+
+    _colorizeImage();
   }
 }

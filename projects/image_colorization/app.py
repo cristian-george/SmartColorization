@@ -72,4 +72,4 @@ def guided_colorization():
 
 
 if __name__ == '__main__':
-    app.run(host='10.146.1.114', port=5000)
+    app.run(host='192.168.0.139', port=5000)

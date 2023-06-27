@@ -20,12 +20,12 @@ class PhotoModel {
     required this.category,
   });
 
-  factory PhotoModel.fromMap(Map<String, dynamic> json) => PhotoModel(
-      id: json['id'],
-      timestamp: json['timestamp'],
-      originalImagePath: json['originalImagePath'],
-      processedImagePath: json['processedImagePath'],
-      category: PhotoCategory.values[json['category']]);
+  factory PhotoModel.fromMap(Map<String, dynamic> map) => PhotoModel(
+      id: map['id'],
+      timestamp: map['timestamp'],
+      originalImagePath: map['originalImagePath'],
+      processedImagePath: map['processedImagePath'],
+      category: PhotoCategory.values[map['category']]);
 
   Map<String, dynamic> toMap() => {
         'timestamp': timestamp,

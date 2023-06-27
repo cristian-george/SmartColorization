@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../services/colorization_service.dart';
+import '../services/automatic_colorization_local.dart';
 import 'image_widget.dart';
 
 class ColorizationImageWidget extends StatelessWidget {
@@ -26,7 +26,7 @@ class ColorizationImageWidget extends StatelessWidget {
     return isColoring
         ? FutureBuilder(
             future: compute(
-              ColorizationService.preprocessingImage,
+              AutomaticColorizationLocal.preprocessingImage,
               originalImageData!,
             ),
             builder: (context, snapshot) {
@@ -45,11 +45,11 @@ class ColorizationImageWidget extends StatelessWidget {
                 );
               } else {
                 Map<String, dynamic> status = snapshot.data;
-                status = ColorizationService.runModel(status);
+                status = AutomaticColorizationLocal.runModel(status);
 
                 return FutureBuilder(
                   future: compute(
-                    ColorizationService.postprocessingImage,
+                    AutomaticColorizationLocal.postprocessingImage,
                     status,
                   ),
                   builder: (context, snapshot) {
