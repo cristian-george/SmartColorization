@@ -178,6 +178,7 @@ class _EditedImagesHistoryPageState extends State<EditedImagesHistoryPage> {
                         children: [
                           ButtonOptionWidget(
                             text: 'All',
+                            alpha: _getAlpha(null),
                             onSelected: () {
                               _currentCategory = null;
                               setState(() {});
@@ -185,6 +186,7 @@ class _EditedImagesHistoryPageState extends State<EditedImagesHistoryPage> {
                           ),
                           ButtonOptionWidget(
                             text: 'Automatic Image Colorization',
+                            alpha: _getAlpha(PhotoCategory.automaticColorized),
                             onSelected: () {
                               _currentCategory =
                                   PhotoCategory.automaticColorized;
@@ -193,6 +195,7 @@ class _EditedImagesHistoryPageState extends State<EditedImagesHistoryPage> {
                           ),
                           ButtonOptionWidget(
                             text: 'User Guided Image Colorization',
+                            alpha: _getAlpha(PhotoCategory.guidedColorized),
                             onSelected: () {
                               _currentCategory = PhotoCategory.guidedColorized;
                               setState(() {});
@@ -200,6 +203,7 @@ class _EditedImagesHistoryPageState extends State<EditedImagesHistoryPage> {
                           ),
                           ButtonOptionWidget(
                             text: 'Image Color Filters',
+                            alpha: _getAlpha(PhotoCategory.colorFiltered),
                             onSelected: () {
                               _currentCategory = PhotoCategory.colorFiltered;
                               setState(() {});
@@ -207,6 +211,7 @@ class _EditedImagesHistoryPageState extends State<EditedImagesHistoryPage> {
                           ),
                           ButtonOptionWidget(
                             text: 'Image Convolution Filters',
+                            alpha: _getAlpha(PhotoCategory.convFiltered),
                             onSelected: () {
                               _currentCategory = PhotoCategory.convFiltered;
                               setState(() {});
@@ -223,5 +228,13 @@ class _EditedImagesHistoryPageState extends State<EditedImagesHistoryPage> {
         ),
       ),
     );
+  }
+
+  _getAlpha(category) {
+    if (category == _currentCategory) {
+      return 100;
+    }
+
+    return 40;
   }
 }

@@ -5,17 +5,19 @@ class ButtonOptionWidget extends StatelessWidget {
     Key? key,
     required this.text,
     required this.onSelected,
+    this.alpha,
   }) : super(key: key);
 
   final String text;
   final Function() onSelected;
+  final int? alpha;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20.0),
-        color: Colors.black.withAlpha(50),
+        color: Colors.black.withAlpha(alpha ?? 60),
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
