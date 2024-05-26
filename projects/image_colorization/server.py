@@ -42,11 +42,14 @@ def automatic_colorization():
     return result
 
 
-gpu_id = 0
-cuda0 = torch.device('cuda:{}'.format(gpu_id))
+cuda_device = None
+
+if torch.cuda.is_available():
+    gpu_id = torch.cuda.current_device()
+    cuda_device = torch.device('cuda:{}'.format(gpu_id))
 
 guided_model = ColorizeImageTorch(Xd=256)
-guided_model.prep_net(gpu_id,
+guided_model.prep_net(cuda_device,
                       path='interactive_colorization/models/model.pth',
                       SIGGRAPHGenerator=SIGGRAPHGenerator)
 
@@ -63,7 +66,7 @@ def guided_colorization():
     image = np.frombuffer(image, np.uint8)
     image = cv2.imdecode(image, cv2.IMREAD_COLOR)
 
-    _, color = colorize_image(cuda0, guided_model, image, coordinates, colors)
+    _, color = colorize_image(cuda_device, guided_model, image, coordinates, colors)
     color = cv2.cvtColor(color, cv2.COLOR_BGR2RGB)
     _, buffer = cv2.imencode('.jpg', color)
 
@@ -72,4 +75,4 @@ def guided_colorization():
 
 
 if __name__ == '__main__':
-    app.run(host='192.168.0.139', port=5000)
+    app.run(host='192.168.0.116', port=5000)

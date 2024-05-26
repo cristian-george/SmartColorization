@@ -212,13 +212,10 @@ class ColorizeImageTorch(ColorizeImageBase):
         # Load grid properties
         self.pts_in_hull = np.array(np.meshgrid(np.arange(-110, 120, 10), np.arange(-110, 120, 10))).reshape((2, 529)).T
 
-    def prep_net(self, gpu_id=None, path='', dist=False, SIGGRAPHGenerator=None):
-        # These errors out when its imported
-        print('path = %s' % path)
-        print('Model set! dist mode? ', dist)
+    def prep_net(self, cuda_device=None, path='', dist=False, SIGGRAPHGenerator=None):
         if SIGGRAPHGenerator is None:
             raise "No model was specified"
-        self.net = SIGGRAPHGenerator(dist=dist)
+        self.net = SIGGRAPHGenerator(cuda_device=cuda_device, dist=dist)
         state_dict = torch.load(path)
         if hasattr(state_dict, '_metadata'):
             del state_dict._metadata
@@ -227,7 +224,7 @@ class ColorizeImageTorch(ColorizeImageBase):
         for key in list(state_dict.keys()):  # need to copy keys here because we mutate in loop
             self.__patch_instance_norm_state_dict(state_dict, self.net, key.split('.'))
         self.net.load_state_dict(state_dict)
-        if gpu_id is not None:
+        if cuda_device is not None:
             self.net.cuda()
         self.net.eval()
         self.net_set = True

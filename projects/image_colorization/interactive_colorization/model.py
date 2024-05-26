@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class SIGGRAPHGenerator(nn.Module):
-    def __init__(self, dist=False):
+    def __init__(self, cuda_device=None, dist=False):
         super(SIGGRAPHGenerator, self).__init__()
         self.dist = dist
         use_bias = True
@@ -130,7 +130,7 @@ class SIGGRAPHGenerator(nn.Module):
 
         self.upsample4 = nn.Sequential(*[nn.Upsample(scale_factor=4, mode='nearest'), ])
         self.softmax = nn.Sequential(*[nn.Softmax(dim=1), ])
-        self.cuda0 = torch.device('cuda:0')
+        self.cuda_device = cuda_device
 
     def forward(self, input_A, input_B, mask_B, maskcent=0):
         # input_A \in [-50,+50]
@@ -143,7 +143,8 @@ class SIGGRAPHGenerator(nn.Module):
         mask_B = mask_B - maskcent
 
         input_A = torch.Tensor(input_A)
-        input_A = input_A.to(self.cuda0)
+        if self.cuda_device is not None:
+            input_A = input_A.to(self.cuda_device)
         conv1_2 = self.model1(torch.cat((input_A / 100., input_B / 110., mask_B), dim=1))
         conv2_2 = self.model2(conv1_2[:, :, ::2, ::2])
         conv3_3 = self.model3(conv2_2[:, :, ::2, ::2])

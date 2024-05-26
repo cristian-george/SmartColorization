@@ -30,8 +30,12 @@ def colorize_image(device, model, image, locs, vals):
     input_ab, mask = put_points(input_ab, mask, 3, locs, vals)
 
     # Call forward (run model and return 256x256 image)
-    model.net_forward(torch.tensor(input_ab, dtype=torch.float32).to(device),
-                      torch.tensor(mask, dtype=torch.float32).to(device))
+    if device is not None:
+        model.net_forward(torch.tensor(input_ab, dtype=torch.float32).to(device),
+                          torch.tensor(mask, dtype=torch.float32).to(device))
+    else:
+        model.net_forward(torch.tensor(input_ab, dtype=torch.float32),
+                          torch.tensor(mask, dtype=torch.float32))
 
     # Get images at full resolution
     mask = model.get_input_img_fullres()

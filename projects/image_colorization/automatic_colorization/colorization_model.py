@@ -9,7 +9,7 @@ from keras.callbacks import ModelCheckpoint
 from keras.layers import Concatenate, Conv2D, BatchNormalization, UpSampling2D
 from keras.losses import MeanSquaredError
 from keras.optimizers import Adam
-from keras.optimizers.schedules.learning_rate_schedule import ExponentialDecay
+from keras.src.optimizers.schedules import ExponentialDecay
 from matplotlib import pyplot as plt
 from skimage.color import lab2rgb
 from skimage.transform import resize
