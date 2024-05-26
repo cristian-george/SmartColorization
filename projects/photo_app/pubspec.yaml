@@ -11,15 +11,16 @@ dependencies:
   flutter:
     sdk: flutter
 
+  archive: ^3.6.0
   http: ^0.13.6
   device_info_plus: ^9.0.0
 
   fluttertoast: ^8.2.1
   image: ^4.0.17
-  image_picker: ^0.8.7+4
-  image_cropper: ^3.0.3
+  image_picker: ^1.0.7
+  image_cropper: ^4.0.1
   gallery_saver: ^2.3.2
-  permission_handler: ^10.2.0
+  permission_handler: ^11.0.1
   path_provider: ^2.0.15
   sqflite: ^2.2.8+4
   share_plus: ^7.0.2
@@ -41,7 +42,7 @@ dev_dependencies:
     sdk: flutter
 
   flutter_launcher_icons: "^0.13.1"
-  flutter_lints: ^2.0.0
+  flutter_lints: ^3.0.1
 
 flutter_launcher_icons:
   android: true
